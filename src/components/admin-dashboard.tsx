@@ -880,8 +880,10 @@ function SettingsTab() {
   const [copyright, setCopyright] = useState("");
   const [credit, setCredit] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [savingIdentity, setSavingIdentity] = useState(false);
+  const [savedIdentity, setSavedIdentity] = useState(false);
+  const [savingFooter, setSavingFooter] = useState(false);
+  const [savedFooter, setSavedFooter] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -911,9 +913,9 @@ function SettingsTab() {
     };
   }, []);
 
-  async function save() {
-    setSaving(true);
-    setSaved(false);
+  async function saveIdentity() {
+    setSavingIdentity(true);
+    setSavedIdentity(false);
     setError(null);
     try {
       await api("/api/admin/settings", {
@@ -923,15 +925,34 @@ function SettingsTab() {
           barbershop_name: name,
           barbershop_icon: icon,
           barbershop_location: location,
+        }),
+      });
+      setSavedIdentity(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao salvar.");
+    } finally {
+      setSavingIdentity(false);
+    }
+  }
+
+  async function saveFooter() {
+    setSavingFooter(true);
+    setSavedFooter(false);
+    setError(null);
+    try {
+      await api("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           footer_copyright: copyright,
           footer_credit: credit,
         }),
       });
-      setSaved(true);
+      setSavedFooter(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao salvar.");
     } finally {
-      setSaving(false);
+      setSavingFooter(false);
     }
   }
 
@@ -953,11 +974,11 @@ function SettingsTab() {
           />
         </div>
         <div className="mt-4 flex items-center gap-2">
-          <Button onClick={save} disabled={saving || loading}>
-            {saving ? <Spinner className="h-5 w-5" /> : null}
+          <Button onClick={saveIdentity} disabled={savingIdentity || loading}>
+            {savingIdentity ? <Spinner className="h-5 w-5" /> : null}
             Salvar
           </Button>
-          {saved ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
+          {savedIdentity ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
         </div>
       </div>
 
@@ -971,11 +992,11 @@ function SettingsTab() {
           <Field label="Crédito" value={credit} onChange={setCredit} />
         </div>
         <div className="mt-4 flex items-center gap-3">
-          <Button onClick={save} disabled={saving || loading}>
-            {saving ? <Spinner className="h-5 w-5" /> : null}
+          <Button onClick={saveFooter} disabled={savingFooter || loading}>
+            {savingFooter ? <Spinner className="h-5 w-5" /> : null}
             Salvar
           </Button>
-          {saved ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
+          {savedFooter ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
         </div>
       </div>
       <ErrorBox message={error} />
