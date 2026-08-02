@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button, ErrorBox, Input, Spinner } from "@/components/ui";
 import { buildWaLink, formatDateBR } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/config";
+import { todayInTZ } from "@/lib/date";
 import type { AppointmentWithDetails, Barber, Service } from "@/lib/types";
 
 type Tab = "appointments" | "barbers" | "services" | "settings";
@@ -348,6 +349,7 @@ function AppointmentsCalendar({
     return first ? new Date(first + "T12:00:00") : new Date();
   });
   const [dayStatus, setDayStatus] = useState<"" | "confirmed" | "cancelled">("");
+  const today = useMemo(() => todayInTZ(), []);
 
   const byDay = useMemo(() => {
     const map = new Map<string, AppointmentWithDetails[]>();
@@ -426,6 +428,7 @@ function AppointmentsCalendar({
             const hasConfirmed = dayItems.some((a) => a.status === "confirmed");
             const hasCancelled = dayItems.some((a) => a.status === "cancelled");
             const isSelected = selectedDay === dateStr;
+            const isToday = dateStr === today;
             return (
               <button
                 key={dateStr}
@@ -437,6 +440,10 @@ function AppointmentsCalendar({
                     : dayItems.length > 0
                       ? "bg-panel-2 hover:border hover:border-gold/50"
                       : "text-muted/40 hover:bg-panel-2"
+                } ${
+                  isToday && !isSelected
+                    ? "ring-1 ring-inset ring-green-500/70"
+                    : ""
                 }`}
               >
                 <span className={dayItems.length > 0 || isSelected ? "font-semibold" : ""}>

@@ -109,12 +109,13 @@ export function Calendar({
                 isSelected
                   ? "bg-gold font-bold text-ink shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:bg-gold"
                   : ""
+              } ${
+                isToday && !isSelected
+                  ? "ring-1 ring-inset ring-green-500/70"
+                  : ""
               }`}
             >
               {format(day, "d")}
-              {isToday && selectable && !isSelected ? (
-                <span className="absolute bottom-1 h-1 w-1 rounded-full bg-gold" />
-              ) : null}
             </button>
           );
         })}
