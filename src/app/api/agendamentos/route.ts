@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const service = services.find((s) => s.id === data.serviceId);
     const barber = barbers.find((b) => b.id === data.barberId);
 
-    const baseUrl = process.env.BASE_URL || `https://${request.headers.get("host")}`;
+    const baseUrl = (process.env.BASE_URL || `https://${request.headers.get("host")}`).replace(/\/+$/, "");
     const cancelUrl = `${baseUrl}/cancelar/${appointment.cancelToken}`;
 
     const message = confirmationMessage({
