@@ -354,6 +354,7 @@ function ServicesTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -454,32 +455,114 @@ function ServicesTab() {
               key={s.id}
               className="rounded-2xl border border-line bg-panel p-4"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{s.emoji}</span>
-                  <div>
-                    <p className="font-semibold text-cream">{s.name}</p>
-                    <p className="text-sm font-bold text-gold">
-                      {formatPrice(s.priceCents)}
-                    </p>
+              {editingId === s.id ? (
+                <EditableService
+                  service={s}
+                  onCancel={() => setEditingId(null)}
+                  onSave={(patch) => {
+                    setEditingId(null);
+                    save(s, patch);
+                  }}
+                />
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{s.emoji}</span>
+                    <div>
+                      <p className="font-semibold text-cream">{s.name}</p>
+                      <p className="text-sm font-bold text-gold">
+                        {formatPrice(s.priceCents)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(s.id)}
+                      className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => save(s, { active: !s.active })}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                        s.active
+                          ? "bg-gold/15 text-gold hover:bg-gold/25"
+                          : "bg-crimson/15 text-red-300 hover:bg-crimson/25"
+                      }`}
+                    >
+                      {s.active ? "Ativo" : "Inativo"}
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => save(s, { active: !s.active })}
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                    s.active
-                      ? "bg-gold/15 text-gold hover:bg-gold/25"
-                      : "bg-crimson/15 text-red-300 hover:bg-crimson/25"
-                  }`}
-                >
-                  {s.active ? "Ativo" : "Inativo"}
-                </button>
-              </div>
+              )}
             </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Nome editável inline
+// ------------------------------------------------------------
+function EditableService({
+  service,
+  onSave,
+  onCancel,
+}: {
+  service: Service;
+  onSave: (patch: { name?: string; price?: number; emoji?: string }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(service.name);
+  const [price, setPrice] = useState((service.priceCents / 100).toFixed(2).replace(".", ","));
+  const [emoji, setEmoji] = useState(service.emoji);
+
+  const priceCents = Math.round(parseFloat(price.replace(",", ".")) * 100);
+  const valid = name.trim().length >= 2 && !Number.isNaN(priceCents) && priceCents >= 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_70px_auto]">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Nome do serviço"
+          className="h-10"
+        />
+        <Input
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Preço"
+          inputMode="decimal"
+          className="h-10"
+        />
+        <Input
+          value={emoji}
+          onChange={(e) => setEmoji(e.target.value)}
+          placeholder="Emoji"
+          className="h-10"
+        />
+        <div className="flex gap-2">
+          <Button
+            className="h-10"
+            disabled={!valid}
+            onClick={() => onSave({ name: name.trim(), price: priceCents, emoji })}
+          >
+            Salvar
+          </Button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-10 px-2 text-muted transition hover:text-cream"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
