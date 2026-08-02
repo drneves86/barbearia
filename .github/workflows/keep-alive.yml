@@ -1,17 +1,16 @@
-name: keep-alive
+name: Keep Render alive
 
 on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
-  ping:
+  keep-alive:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Render para evitar sleep (15 min) e Supabase (7 dias)
+      - name: Ping the app to prevent Render from spinning down
         run: |
-          curl -sS -o /dev/null --max-time 90 "https://barbearia-qosa.onrender.com/api/catalog" || echo "ping falhou (ignorado)"
+          curl -fsS -o /dev/null -w "status=%{http_code} time=%{time_total}s\n" \
+            --max-time 60 \
+            "https://barbearia-qosa.onrender.com/api/health"
