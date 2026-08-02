@@ -28,7 +28,7 @@ export default async function Home() {
       </header>
 
       <section className="rounded-3xl border border-line bg-ink-soft/80 p-5 shadow-2xl backdrop-blur-sm">
-        <h2 className="mb-1 text-lg font-bold text-gold">Criar conta</h2>
+        <h2 className="mb-1 text-lg font-bold text-gold">Criar agendamento</h2>
         <p className="mb-4 text-sm text-muted">
           Preencha seus dados para começar o agendamento.
         </p>

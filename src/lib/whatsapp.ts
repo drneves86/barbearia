@@ -16,24 +16,49 @@ export function confirmationMessage(opts: {
   barberName: string;
   clientName: string;
   serviceName: string;
+  price: string;
   date: string;
   time: string;
   cancelUrl: string;
 }): string {
   return [
-    "Olá! 👋",
+    `💈 ${opts.barbershop} 💈`,
     "",
-    `Novo agendamento na ${opts.barbershop}. 💈`,
+    "Confirmação de Agendamento",
     "",
-    `🧔 Cliente: ${opts.clientName}`,
-    `✂️ Serviço: ${opts.serviceName}`,
-    `📅 Data: ${formatDateBR(opts.date)}`,
-    `⏰ Horário: ${opts.time}`,
     "",
-    "Caso precise cancelar, acesse:",
+    `👥 Olá, ${opts.clientName}!`,
+    "",
+    "",
+    "━━━━━━━━━━━━━━━",
+    "",
+    "",
+    "Detalhes do agendamento:",
+    `💇🏽‍♂️ PROFISSIONAL: ${opts.barberName}`,
+    `🧰 SERVIÇO: ${opts.serviceName}`,
+    `💰 VALOR: ${opts.price}`,
+    `📌 DIA: ${formatDateBR(opts.date)}`,
+    `⌚ HORÁRIO: ${opts.time}`,
+    "",
+    "",
+    "━━━━━━━━━━━━━━━",
+    "",
+    "",
+    "✅ Seu horário já foi confirmado automaticamente.",
+    "",
+    "",
+    "━━━━━━━━━━━━━━━",
+    "",
+    "",
+    "❌ Cancelar horário:",
     opts.cancelUrl,
+    "━━━━━━━━━━━━━━━",
     "",
-    "Obrigado!",
+    "",
+    "⏰ O cancelamento pode ser feito até 30 minuto(s) antes do horário agendado.",
+    "",
+    "",
+    "COMPROVANTE DE AGENDAMENTO",
   ].join("\n");
 }
 

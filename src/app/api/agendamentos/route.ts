@@ -1,7 +1,7 @@
 import { createAppointment, findOrCreateUser, listBarbers, listServices } from "@/lib/db";
 import { appointmentSchema, firstErrorMessage } from "@/lib/validations";
 import { buildWaLink, confirmationMessage } from "@/lib/whatsapp";
-import { BARBERSHOP_NAME } from "@/lib/config";
+import { BARBERSHOP_NAME, formatPrice } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       barberName: barber?.name ?? "a barbearia",
       clientName,
       serviceName: service?.name ?? "",
+      price: formatPrice(service?.priceCents ?? 0),
       date: appointment.date,
       time: appointment.time,
       cancelUrl,
