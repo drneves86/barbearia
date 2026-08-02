@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     const baseUrl = (process.env.BASE_URL || `https://${request.headers.get("host")}`).replace(/\/+$/, "");
     const cancelUrl = `${baseUrl}/cancelar/${appointment.cancelToken}`;
 
-    const clientName = [user.name, user.lastName].filter(Boolean).join(" ").trim() || user.name;
+    const clientName = [data.name, data.lastName].filter(Boolean).join(" ").trim() || data.name;
 
     const settings = await getSettings().catch(() => ({} as Record<string, string>));
     const shopName = settings.barbershop_name || "Minha Barbearia";
