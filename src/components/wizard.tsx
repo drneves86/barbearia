@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Button, ErrorBox, Field, Input, Spinner } from "@/components/ui";
-import { PhoneInput } from "@/components/phone-input";
+import { Button, ErrorBox, Spinner } from "@/components/ui";
 import { Calendar } from "@/components/calendar";
 import { TimePicker } from "@/components/time-picker";
 import { formatDateBR } from "@/lib/whatsapp";
@@ -41,7 +40,6 @@ export function Wizard() {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const [user, setUser] = useState<UserForm>({ name: "", lastName: "", email: "", phone: "" });
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof UserForm, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -98,11 +96,6 @@ export function Wizard() {
     setPickerOpen(true);
   }
 
-  function setField<K extends keyof UserForm>(key: K, value: string) {
-    setUser((u) => ({ ...u, [key]: value }));
-    setFieldErrors((e) => ({ ...e, [key]: undefined }));
-  }
-
   async function confirm() {
     if (!serviceId || !barberId || !date || !time) {
       setError("Complete todas as etapas antes de confirmar.");
@@ -110,14 +103,6 @@ export function Wizard() {
     }
     const parsed = appointmentSchema.safeParse({ ...user, serviceId, barberId, date, time });
     if (!parsed.success) {
-      const errs: Partial<Record<keyof UserForm, string>> = {};
-      for (const issue of parsed.error.issues) {
-        const path = issue.path[0] as keyof UserForm | "serviceId" | "barberId";
-        if (path in user && !errs[path as keyof UserForm]) {
-          errs[path as keyof UserForm] = issue.message;
-        }
-      }
-      setFieldErrors(errs);
       setError(firstErrorMessage(parsed.error));
       setStep(4);
       return;
@@ -377,40 +362,28 @@ export function Wizard() {
                 <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-muted">
                   Seus dados
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Nome" error={fieldErrors.name}>
-                    <Input
-                      value={user.name}
-                      onChange={(e) => setField("name", e.target.value)}
-                      placeholder="João"
-                    />
-                  </Field>
-                  <Field label="Sobrenome (opcional)" error={fieldErrors.lastName}>
-                    <Input
-                      value={user.lastName}
-                      onChange={(e) => setField("lastName", e.target.value)}
-                      placeholder="Silva"
-                    />
-                  </Field>
-                </div>
-                <div className="mt-3">
-                  <Field label="E-mail (opcional)" error={fieldErrors.email}>
-                    <Input
-                      type="email"
-                      value={user.email}
-                      onChange={(e) => setField("email", e.target.value)}
-                      placeholder="voce@email.com"
-                    />
-                  </Field>
-                </div>
-                <div className="mt-3">
-                  <Field label="Telefone (WhatsApp)" error={fieldErrors.phone}>
-                    <PhoneInput
-                      value={user.phone}
-                      onChange={(v) => setField("phone", v)}
-                    />
-                  </Field>
-                </div>
+                <dl className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted">Nome</dt>
+                    <dd className="font-semibold text-cream">{user.name}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Sobrenome</dt>
+                    <dd className="font-semibold text-cream">
+                      {user.lastName || "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">E-mail</dt>
+                    <dd className="font-semibold text-cream">
+                      {user.email || "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted">Telefone (WhatsApp)</dt>
+                    <dd className="font-semibold text-cream">{user.phone}</dd>
+                  </div>
+                </dl>
               </div>
 
               <div className="flex gap-2">
@@ -467,14 +440,21 @@ function SuccessScreen({ result }: { result: Result }) {
         </ul>
       </div>
 
-      <a
-        href={result.waLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] text-lg font-bold text-white shadow-[0_8px_30px_rgba(37,211,102,0.3)] transition hover:brightness-110"
-      >
-        Enviar no WhatsApp
-      </a>
+      {result.waLink ? (
+        <a
+          href={result.waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] text-lg font-bold text-white shadow-[0_8px_30px_rgba(37,211,102,0.3)] transition hover:brightness-110"
+        >
+          Enviar no WhatsApp
+        </a>
+      ) : (
+        <p className="mt-5 rounded-xl border border-line bg-ink-soft/70 p-4 text-center text-sm text-muted">
+          O barbeiro ainda não cadastrou o número de WhatsApp. Avise-o pelo link
+          de cancelamento abaixo.
+        </p>
+      )}
 
       <div className="mt-4 rounded-xl border border-line bg-ink-soft/70 p-4">
         <p className="text-xs text-muted">

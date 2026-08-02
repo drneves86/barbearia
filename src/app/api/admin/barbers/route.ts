@@ -28,9 +28,10 @@ export async function POST(request: Request) {
   if (!name || name.length < 2) {
     return Response.json({ error: "Informe o nome do barbeiro." }, { status: 400 });
   }
+  const phone = (body as { phone?: string })?.phone?.trim() ?? "";
 
   try {
-    const barber = await createBarber(name);
+    const barber = await createBarber(name, phone);
     return Response.json({ barber }, { status: 201 });
   } catch (e) {
     return Response.json(

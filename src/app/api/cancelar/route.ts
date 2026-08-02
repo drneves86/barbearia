@@ -27,12 +27,20 @@ export async function POST(request: Request) {
   const message = cancellationMessage({
     barbershop: BARBERSHOP_NAME,
     barberName: appointment.barberName,
+    clientName: [appointment.userName, appointment.userLastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || appointment.userName,
     date: appointment.date,
     time: appointment.time,
   });
 
+  const waLink = appointment.barberPhone
+    ? buildWaLink(appointment.barberPhone, message)
+    : "";
+
   return Response.json({
     ok: true,
-    waLink: buildWaLink(appointment.userPhone, message),
+    waLink,
   });
 }

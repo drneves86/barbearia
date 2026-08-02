@@ -52,14 +52,20 @@ export function CancelForm({
           Seu agendamento com o barbeiro {barberName} no dia {date} às {time}{" "}
           foi removido da agenda.
         </p>
-        <a
-          href={waLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] font-bold text-white transition hover:brightness-110"
-        >
-          Avisar no WhatsApp
-        </a>
+        {waLink ? (
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] font-bold text-white transition hover:brightness-110"
+          >
+            Avisar no WhatsApp
+          </a>
+        ) : (
+          <p className="mt-5 rounded-xl border border-line bg-ink-soft/70 p-4 text-center text-sm text-muted">
+            O barbeiro ainda não cadastrou o número de WhatsApp.
+          </p>
+        )}
         <Link
           href="/"
           className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border border-line text-cream transition hover:border-gold/50 hover:text-gold"

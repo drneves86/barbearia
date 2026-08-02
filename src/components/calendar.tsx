@@ -13,7 +13,7 @@ import {
   subMonths,
 } from "date-fns";
 
-const WEEKDAYS = ["S", "T", "Q", "Q", "S", "S", "D"];
+const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
 const WEEKDAY_LONG = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
 export function Calendar({
@@ -35,8 +35,8 @@ export function Calendar({
   const days = useMemo(() => {
     const monthStart = startOfMonth(cursor);
     const monthEnd = endOfMonth(cursor);
-    const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
     return eachDayOfInterval({ start: gridStart, end: gridEnd });
   }, [cursor]);
 

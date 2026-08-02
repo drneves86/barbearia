@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { updateBarber } from "@/lib/db";
+import { deleteBarber, updateBarber } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,11 @@ export async function PATCH(
     return Response.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  const { name, active } = body as { name?: string; active?: boolean };
+  const { name, phone, active } = body as {
+    name?: string;
+    phone?: string;
+    active?: boolean;
+  };
   if (name !== undefined && name.trim().length < 2) {
     return Response.json({ error: "Nome inválido." }, { status: 400 });
   }
@@ -30,6 +34,7 @@ export async function PATCH(
   try {
     const barber = await updateBarber(id, {
       name: name !== undefined ? name.trim() : undefined,
+      phone: phone !== undefined ? phone.trim() : undefined,
       active,
     });
     return Response.json({ barber });
@@ -39,4 +44,24 @@ export async function PATCH(
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  ctx: RouteContext<"/api/admin/barbers/[id]">
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return Response.json({ error: "Não autorizado." }, { status: 401 });
+  }
+
+  const { id } = await ctx.params;
+  const ok = await deleteBarber(id);
+  if (!ok) {
+    return Response.json(
+      { error: "Não foi possível excluir o barbeiro." },
+      { status: 500 }
+    );
+  }
+  return Response.json({ ok: true });
 }

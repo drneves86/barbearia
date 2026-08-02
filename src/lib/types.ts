@@ -9,6 +9,7 @@ export type Service = {
 export type Barber = {
   id: string;
   name: string;
+  phone: string;
   active: boolean;
 };
 
@@ -42,6 +43,7 @@ export type AppointmentWithDetails = AppointmentRecord & {
   serviceEmoji: string;
   priceCents: number;
   barberName: string;
+  barberPhone: string;
 };
 
 export type Slot = {

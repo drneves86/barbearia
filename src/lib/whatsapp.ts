@@ -14,6 +14,7 @@ export function buildWaLink(phone: string, message: string): string {
 export function confirmationMessage(opts: {
   barbershop: string;
   barberName: string;
+  clientName: string;
   serviceName: string;
   date: string;
   time: string;
@@ -22,30 +23,36 @@ export function confirmationMessage(opts: {
   return [
     "Olá! 👋",
     "",
-    `Passando para confirmar o seu horário na ${opts.barbershop}. 💈`,
-    `Seu atendimento está reservado com o barbeiro ${opts.barberName} para o dia ${formatDateBR(opts.date)}, às ${opts.time} (${opts.serviceName}).`,
+    `Novo agendamento na ${opts.barbershop}. 💈`,
     "",
-    "Caso precise remarcar ou cancelar, é só nos avisar com antecedência.",
+    `🧔 Cliente: ${opts.clientName}`,
+    `✂️ Serviço: ${opts.serviceName}`,
+    `📅 Data: ${formatDateBR(opts.date)}`,
+    `⏰ Horário: ${opts.time}`,
     "",
-    `Para cancelar, acesse: ${opts.cancelUrl}`,
+    "Caso precise cancelar, acesse:",
+    opts.cancelUrl,
     "",
-    "Esperamos você! Até breve! 😎",
+    "Obrigado!",
   ].join("\n");
 }
 
 export function cancellationMessage(opts: {
   barbershop: string;
   barberName: string;
+  clientName: string;
   date: string;
   time: string;
 }): string {
   return [
     "Olá! 👋",
     "",
-    `Recebemos a solicitação de cancelamento e o seu horário na ${opts.barbershop} foi removido da agenda com sucesso.`,
-    `Era o atendimento com o barbeiro ${opts.barberName} no dia ${formatDateBR(opts.date)}, às ${opts.time}.`,
+    `Um horário na ${opts.barbershop} foi cancelado.`,
     "",
-    "Se desejar agendar um novo horário futuramente, será um prazer atendê-lo(a). 💈",
+    `🧔 Cliente: ${opts.clientName}`,
+    `📅 Data: ${formatDateBR(opts.date)}`,
+    `⏰ Horário: ${opts.time}`,
+    "",
     "Até a próxima!",
   ].join("\n");
 }

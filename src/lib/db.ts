@@ -37,11 +37,18 @@ export async function listServices(activeOnly = true): Promise<Service[]> {
 export async function listBarbers(activeOnly = true): Promise<Barber[]> {
   let q = supabaseAdmin()
     .from("barbers")
-    .select("id, name, active")
+    .select("id, name, phone, active")
     .order("name", { ascending: true });
   if (activeOnly) q = q.eq("active", true);
   const { data } = await q;
-  return (data ?? []) as Barber[];
+  return ((data ?? []) as { id: string; name: string; phone: string | null; active: boolean }[]).map(
+    (r) => ({
+      id: r.id,
+      name: r.name,
+      phone: r.phone ?? "",
+      active: r.active,
+    })
+  );
 }
 
 // ------------------------------------------------------------
@@ -206,12 +213,12 @@ const APPOINTMENT_SELECT = `
   cancelled_at,
   users ( name, last_name, email, phone ),
   services ( name, price_cents, emoji ),
-  barbers ( name )
+  barbers ( name, phone )
 `;
 
 type NestedUsers = { name: string; last_name: string | null; email: string | null; phone: string };
 type NestedServices = { name: string; price_cents: number; emoji: string };
-type NestedBarbers = { name: string };
+type NestedBarbers = { name: string; phone: string | null };
 
 type AppointmentRow = {
   id: string;
@@ -257,6 +264,7 @@ function mapAppointment(row: AppointmentRow): AppointmentWithDetails {
     serviceEmoji: services?.emoji ?? "💈",
     priceCents: services?.price_cents ?? 0,
     barberName: barbers?.name ?? "",
+    barberPhone: barbers?.phone ?? "",
   };
 }
 
@@ -372,28 +380,48 @@ export async function adminCancelAppointment(id: string): Promise<boolean> {
 }
 
 // Barbeiros (CRUD admin)
-export async function createBarber(name: string): Promise<Barber> {
+export async function createBarber(name: string, phone = ""): Promise<Barber> {
   const { data, error } = await supabaseAdmin()
     .from("barbers")
-    .insert({ name: name.trim() })
-    .select("id, name, active")
+    .insert({ name: name.trim(), phone: phone.trim() || null })
+    .select("id, name, phone, active")
     .single();
   if (error) throw new Error("Não foi possível criar o barbeiro.");
-  return data as Barber;
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    phone: (data.phone as string) ?? "",
+    active: data.active as boolean,
+  };
 }
 
 export async function updateBarber(
   id: string,
-  patch: { name?: string; active?: boolean }
+  patch: { name?: string; phone?: string; active?: boolean }
 ): Promise<Barber> {
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.name !== undefined) dbPatch.name = patch.name.trim();
+  if (patch.phone !== undefined) dbPatch.phone = patch.phone.trim() || null;
+  if (patch.active !== undefined) dbPatch.active = patch.active;
+
   const { data, error } = await supabaseAdmin()
     .from("barbers")
-    .update(patch)
+    .update(dbPatch)
     .eq("id", id)
-    .select("id, name, active")
+    .select("id, name, phone, active")
     .single();
   if (error) throw new Error("Não foi possível atualizar o barbeiro.");
-  return data as Barber;
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    phone: (data.phone as string) ?? "",
+    active: data.active as boolean,
+  };
+}
+
+export async function deleteBarber(id: string): Promise<boolean> {
+  const { error } = await supabaseAdmin().from("barbers").delete().eq("id", id);
+  return !error;
 }
 
 // Serviços (CRUD admin)
@@ -445,4 +473,17 @@ export async function updateService(
     emoji: data.emoji as string,
     active: data.active as boolean,
   };
+}
+
+export async function deleteService(id: string): Promise<boolean> {
+  const { error } = await supabaseAdmin().from("services").delete().eq("id", id);
+  return !error;
+}
+
+export async function deleteAppointment(id: string): Promise<boolean> {
+  const { error } = await supabaseAdmin()
+    .from("appointments")
+    .delete()
+    .eq("id", id);
+  return !error;
 }

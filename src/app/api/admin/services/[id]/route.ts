@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { updateService } from "@/lib/db";
+import { deleteService, updateService } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -50,4 +50,24 @@ export async function PATCH(
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  ctx: RouteContext<"/api/admin/services/[id]">
+) {
+  const session = await getAdminSession();
+  if (!session) {
+    return Response.json({ error: "Não autorizado." }, { status: 401 });
+  }
+
+  const { id } = await ctx.params;
+  const ok = await deleteService(id);
+  if (!ok) {
+    return Response.json(
+      { error: "Não foi possível excluir o serviço." },
+      { status: 500 }
+    );
+  }
+  return Response.json({ ok: true });
 }

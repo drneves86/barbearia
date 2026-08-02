@@ -23,6 +23,7 @@ create table if not exists public.users (
 create table if not exists public.barbers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  phone text,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -113,6 +114,9 @@ grant select, insert, update, delete on all tables in schema public to service_r
 --   alter table public.users alter column email drop not null;
 -- Se você já rodou este arquivo antes de 03/2026 com as colunas
 -- NOT NULL, execute as duas linhas acima no SQL Editor.
+-- ------------------------------------------------------------
+-- Migração para a coluna de telefone do barbeiro (para o WhatsApp):
+--   alter table public.barbers add column if not exists phone text;
 -- ------------------------------------------------------------
 
 -- ------------------------------------------------------------

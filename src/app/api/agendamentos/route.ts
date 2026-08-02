@@ -45,14 +45,22 @@ export async function POST(request: Request) {
     const baseUrl = (process.env.BASE_URL || `https://${request.headers.get("host")}`).replace(/\/+$/, "");
     const cancelUrl = `${baseUrl}/cancelar/${appointment.cancelToken}`;
 
+    const clientName = [user.name, user.lastName].filter(Boolean).join(" ").trim() || user.name;
+
     const message = confirmationMessage({
       barbershop: BARBERSHOP_NAME,
       barberName: barber?.name ?? "a barbearia",
+      clientName,
       serviceName: service?.name ?? "",
       date: appointment.date,
       time: appointment.time,
       cancelUrl,
     });
+
+    const barberPhone = barber?.phone ?? "";
+    const waLink = barberPhone
+      ? buildWaLink(barberPhone, message)
+      : "";
 
     return Response.json({
       ok: true,
@@ -64,7 +72,7 @@ export async function POST(request: Request) {
         barber: barber?.name ?? "",
         cancelToken: appointment.cancelToken,
       },
-      waLink: buildWaLink(user.phone, message),
+      waLink,
       cancelUrl,
     });
   } catch (e) {
