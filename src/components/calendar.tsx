@@ -112,7 +112,7 @@ export function Calendar({
               }`}
             >
               {format(day, "d")}
-              {isToday && !isSelected ? (
+              {isToday && selectable && !isSelected ? (
                 <span className="absolute bottom-1 h-1 w-1 rounded-full bg-gold" />
               ) : null}
             </button>
