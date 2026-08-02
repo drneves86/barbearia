@@ -861,6 +861,8 @@ function ServicesTab() {
 // Configurações
 // ------------------------------------------------------------
 function SettingsTab() {
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState("");
   const [copyright, setCopyright] = useState("");
   const [credit, setCredit] = useState("");
   const [loading, setLoading] = useState(true);
@@ -876,6 +878,8 @@ function SettingsTab() {
           "/api/settings"
         );
         if (!cancelled) {
+          setName(data.settings.barbershop_name ?? "");
+          setIcon(data.settings.barbershop_icon ?? "");
           setCopyright(data.settings.footer_copyright ?? "");
           setCredit(data.settings.footer_credit ?? "");
         }
@@ -901,6 +905,8 @@ function SettingsTab() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          barbershop_name: name,
+          barbershop_icon: icon,
           footer_copyright: copyright,
           footer_credit: credit,
         }),
@@ -915,6 +921,24 @@ function SettingsTab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-2xl border border-line bg-panel p-5">
+        <h2 className="mb-1 text-lg font-bold text-cream">Identidade da barbearia</h2>
+        <p className="mb-4 text-sm text-muted">
+          Estes dados aparecem na tela inicial e nas mensagens enviadas.
+        </p>
+        <div className="space-y-3">
+          <Field label="Nome da barbearia" value={name} onChange={setName} />
+          <Field label="Ícone acima do nome" value={icon} onChange={setIcon} />
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <Button onClick={save} disabled={saving || loading}>
+            {saving ? <Spinner className="h-5 w-5" /> : null}
+            Salvar
+          </Button>
+          {saved ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-line bg-panel p-5">
         <h2 className="mb-1 text-lg font-bold text-cream">Rodapé do site</h2>
         <p className="mb-4 text-sm text-muted">

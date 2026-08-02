@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { RegistrationForm } from "@/components/registration-form";
-import { BARBERSHOP_NAME, formatPrice } from "@/lib/config";
+import { formatPrice } from "@/lib/config";
 import { listServices, getSettings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +20,17 @@ export default async function Home() {
     settings = {};
   }
 
+  const shopName = settings.barbershop_name || "Minha Barbearia";
+  const shopIcon = settings.barbershop_icon || "💈";
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8 sm:max-w-lg">
       <header className="pt-6 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-gold/40 bg-panel text-3xl shadow-[0_0_40px_rgba(212,175,55,0.25)]">
-          💈
+          {shopIcon}
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight text-cream">
-          {BARBERSHOP_NAME}
+          {shopName}
         </h1>
         <p className="mt-2 text-muted">
           Agende seu corte em segundos, sem ligação e sem fila.
@@ -39,7 +42,7 @@ export default async function Home() {
         <p className="mb-4 text-sm text-muted">
           Preencha seus dados para começar o agendamento.
         </p>
-        <RegistrationForm />
+        <RegistrationForm barbershopName={shopName} />
       </section>
 
       {services.length > 0 ? (

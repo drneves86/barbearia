@@ -17,10 +17,9 @@ export async function PATCH(request: Request) {
   }
 
   const patch = (body as Record<string, unknown>) ?? {};
+  const ALLOWED = ["barbershop_name", "barbershop_icon", "footer_copyright", "footer_credit"];
   const entries = Object.entries(patch).filter(
-    ([key, value]) =>
-      (key === "footer_copyright" || key === "footer_credit") &&
-      typeof value === "string"
+    ([key, value]) => ALLOWED.includes(key) && typeof value === "string"
   );
   if (entries.length === 0) {
     return Response.json({ error: "Nada para atualizar." }, { status: 400 });

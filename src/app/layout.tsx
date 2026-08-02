@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Background } from "@/components/background";
 import ServiceWorkerRegister from "@/components/sw-register";
-import { BARBERSHOP_NAME } from "@/lib/config";
+import { getSettings } from "@/lib/db";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,23 +15,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: BARBERSHOP_NAME,
-    template: `%s | ${BARBERSHOP_NAME}`,
-  },
-  description: "Agende seu horário com apenas alguns toques.",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: BARBERSHOP_NAME,
-  },
-  icons: {
-    icon: "/icon-192.png",
-    apple: "/icon-192.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings().catch(() => ({} as Record<string, string>));
+  const shopName = settings.barbershop_name || "Minha Barbearia";
+  return {
+    title: {
+      default: shopName,
+      template: `%s | ${shopName}`,
+    },
+    description: "Agende seu horário com apenas alguns toques.",
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: shopName,
+    },
+    icons: {
+      icon: "/icon-192.png",
+      apple: "/icon-192.png",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#0d0d0d",

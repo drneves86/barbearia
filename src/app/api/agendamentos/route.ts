@@ -1,7 +1,7 @@
-import { createAppointment, findOrCreateUser, listBarbers, listServices } from "@/lib/db";
+import { createAppointment, findOrCreateUser, getSettings, listBarbers, listServices } from "@/lib/db";
 import { appointmentSchema, firstErrorMessage } from "@/lib/validations";
 import { buildWaLink, confirmationMessage } from "@/lib/whatsapp";
-import { BARBERSHOP_NAME, formatPrice } from "@/lib/config";
+import { formatPrice } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +47,11 @@ export async function POST(request: Request) {
 
     const clientName = [user.name, user.lastName].filter(Boolean).join(" ").trim() || user.name;
 
+    const settings = await getSettings().catch(() => ({} as Record<string, string>));
+    const shopName = settings.barbershop_name || "Minha Barbearia";
+
     const message = confirmationMessage({
-      barbershop: BARBERSHOP_NAME,
+      barbershop: shopName,
       barberName: barber?.name ?? "a barbearia",
       clientName,
       serviceName: service?.name ?? "",

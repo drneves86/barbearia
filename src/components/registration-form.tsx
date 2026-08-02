@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button, ErrorBox, Field, Input, Spinner } from "@/components/ui";
 import { PhoneInput } from "@/components/phone-input";
 import { userSchema } from "@/lib/validations";
-import { BARBERSHOP_NAME } from "@/lib/config";
 
 const USER_KEY = "barbearia-user";
 
 type Errors = Partial<Record<"name" | "lastName" | "phone", string>>;
 
-export function RegistrationForm() {
+export function RegistrationForm({ barbershopName = "Minha Barbearia" }: { barbershopName?: string }) {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "",
@@ -91,7 +90,7 @@ export function RegistrationForm() {
       </Button>
       <p className="text-center text-xs text-muted/70">
         Você poderá escolher o serviço, o barbeiro, a data e o horário na
-        próxima etapa. Bem-vindo à {BARBERSHOP_NAME}.
+        próxima etapa. Bem-vindo à {barbershopName}.
       </p>
     </form>
   );

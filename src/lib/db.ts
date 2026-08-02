@@ -520,6 +520,8 @@ export async function deleteAppointment(id: string): Promise<boolean> {
 export type SettingsMap = Record<string, string>;
 
 const DEFAULT_SETTINGS: SettingsMap = {
+  barbershop_name: "Minha Barbearia",
+  barbershop_icon: "💈",
   footer_copyright: "© 2026 MinhaBarbearia - Todos os direitos reservados",
   footer_credit: "Desenvolvido por DIEGO NEVES",
 };

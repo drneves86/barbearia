@@ -1,9 +1,13 @@
 import type { MetadataRoute } from "next";
-import { BARBERSHOP_NAME } from "@/lib/config";
+import { getSettings } from "@/lib/db";
 
-export default function manifest(): MetadataRoute.Manifest {
+export const dynamic = "force-dynamic";
+
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const settings = await getSettings().catch(() => ({} as Record<string, string>));
+  const shopName = settings.barbershop_name || "Minha Barbearia";
   return {
-    name: BARBERSHOP_NAME,
+    name: shopName,
     short_name: "Barbearia",
     description: "Agende seu horário com apenas alguns toques.",
     start_url: "/",

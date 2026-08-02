@@ -1,6 +1,5 @@
-import { cancelAppointmentByToken } from "@/lib/db";
+import { cancelAppointmentByToken, getSettings } from "@/lib/db";
 import { buildWaLink, cancellationMessage } from "@/lib/whatsapp";
-import { BARBERSHOP_NAME } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +23,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const settings = await getSettings().catch(() => ({} as Record<string, string>));
+  const shopName = settings.barbershop_name || "Minha Barbearia";
+
   const message = cancellationMessage({
-    barbershop: BARBERSHOP_NAME,
+    barbershop: shopName,
     barberName: appointment.barberName,
     clientName: [appointment.userName, appointment.userLastName]
       .filter(Boolean)
