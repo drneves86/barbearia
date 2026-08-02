@@ -2,7 +2,7 @@ name: Keep Render alive
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -11,6 +11,13 @@ jobs:
     steps:
       - name: Ping the app to prevent Render from spinning down
         run: |
-          curl -fsS -o /dev/null -w "status=%{http_code} time=%{time_total}s\n" \
-            --max-time 60 \
-            "https://barbearia-qosa.onrender.com/api/health"
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS -o /dev/null -w "attempt=$i status=%{http_code} time=%{time_total}s\n" \
+              --max-time 60 \
+              "https://barbearia-qosa.onrender.com/api/health"; then
+              exit 0
+            fi
+            sleep 45
+          done
+          echo "keep-alive falhou apos 6 tentativas" >&2
+          exit 1
