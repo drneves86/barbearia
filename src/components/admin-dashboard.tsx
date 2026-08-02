@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, ErrorBox, Input, Spinner } from "@/components/ui";
-import { formatDateBR } from "@/lib/whatsapp";
+import { buildWaLink, formatDateBR } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/config";
 import type { AppointmentWithDetails, Barber, Service } from "@/lib/types";
 
@@ -37,6 +37,19 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
           <p className="text-sm text-muted">{adminEmail}</p>
         </div>
         <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setTab("settings")}
+            title="Configurações"
+            aria-label="Configurações"
+            className={`flex h-10 w-10 items-center justify-center rounded-lg border text-lg transition ${
+              tab === "settings"
+                ? "border-gold/60 bg-gold/10 text-gold"
+                : "border-line text-cream hover:border-gold/50 hover:text-gold"
+            }`}
+          >
+            ⚙️
+          </button>
           <Link
             href="/"
             className="flex h-10 items-center justify-center rounded-lg border border-line px-4 text-sm text-cream transition hover:border-gold/50"
@@ -59,7 +72,6 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
             ["appointments", "Agendamentos"],
             ["barbers", "Barbeiros"],
             ["services", "Serviços"],
-            ["settings", "Configurações"],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -276,6 +288,16 @@ function AppointmentCard({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {a.userPhone ? (
+            <a
+              href={buildWaLink(a.userPhone, `Olá, ${a.userName}!`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-8 items-center gap-1.5 rounded-lg bg-[#25D366]/15 px-3 text-xs font-semibold text-[#25D366] transition hover:bg-[#25D366]/25"
+            >
+              💬 WhatsApp
+            </a>
+          ) : null}
           <span
             className={`rounded-full px-3 py-1 text-xs font-bold ${
               a.status === "confirmed"
@@ -325,6 +347,7 @@ function AppointmentsCalendar({
     const first = items[0]?.date;
     return first ? new Date(first + "T12:00:00") : new Date();
   });
+  const [dayStatus, setDayStatus] = useState<"" | "confirmed" | "cancelled">("");
 
   const byDay = useMemo(() => {
     const map = new Map<string, AppointmentWithDetails[]>();
@@ -349,13 +372,14 @@ function AppointmentsCalendar({
   }, [cursor]);
 
   const visible = useMemo(() => {
-    const list = selectedDay
+    let list = selectedDay
       ? items.filter((a) => a.date === selectedDay)
       : items;
+    if (selectedDay && dayStatus) list = list.filter((a) => a.status === dayStatus);
     return [...list].sort(
       (x, y) => x.date.localeCompare(y.date) || x.time.localeCompare(y.time)
     );
-  }, [items, selectedDay]);
+  }, [items, selectedDay, dayStatus]);
 
   const monthLabel = `${monthsBR[cursor.getMonth()]} ${cursor.getFullYear()}`;
 
@@ -435,20 +459,47 @@ function AppointmentsCalendar({
       </div>
 
       {selectedDay ? (
-        <div className="flex items-center justify-between rounded-2xl border border-gold/30 bg-panel p-3">
-          <p className="text-sm text-muted">
-            Agendamentos de{" "}
-            <span className="font-semibold text-cream">
-              {formatDateBR(selectedDay)}
-            </span>
-          </p>
-          <button
-            type="button"
-            onClick={() => onSelectDay(null)}
-            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-gold transition hover:border-gold/50"
-          >
-            Ver todos os dias
-          </button>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-gold/30 bg-panel p-3">
+            <p className="text-sm text-muted">
+              Agendamentos de{" "}
+              <span className="font-semibold text-cream">
+                {formatDateBR(selectedDay)}
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                onSelectDay(null);
+                setDayStatus("");
+              }}
+              className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-gold transition hover:border-gold/50"
+            >
+              Ver todos os dias
+            </button>
+          </div>
+          <div className="flex gap-1.5 rounded-xl border border-line bg-panel p-1">
+            {(
+              [
+                ["", "Todos"],
+                ["confirmed", "Confirmados"],
+                ["cancelled", "Cancelados"],
+              ] as [typeof dayStatus, string][]
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setDayStatus(key)}
+                className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  dayStatus === key
+                    ? "bg-gold text-ink"
+                    : "text-muted hover:text-cream"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 
