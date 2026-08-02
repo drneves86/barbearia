@@ -1,0 +1,75 @@
+import { createAppointment, findOrCreateUser, listBarbers, listServices } from "@/lib/db";
+import { appointmentSchema, firstErrorMessage } from "@/lib/validations";
+import { buildWaLink, confirmationMessage } from "@/lib/whatsapp";
+import { BARBERSHOP_NAME } from "@/lib/config";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Requisição inválida." }, { status: 400 });
+  }
+
+  const parsed = appointmentSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: firstErrorMessage(parsed.error) }, { status: 400 });
+  }
+  const data = parsed.data;
+
+  try {
+    const user = await findOrCreateUser({
+      name: data.name,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+    });
+
+    const appointment = await createAppointment({
+      userId: user.id,
+      serviceId: data.serviceId,
+      barberId: data.barberId,
+      date: data.date,
+      time: data.time,
+    });
+
+    const [services, barbers] = await Promise.all([
+      listServices(false),
+      listBarbers(false),
+    ]);
+    const service = services.find((s) => s.id === data.serviceId);
+    const barber = barbers.find((b) => b.id === data.barberId);
+
+    const baseUrl = process.env.BASE_URL || `https://${request.headers.get("host")}`;
+    const cancelUrl = `${baseUrl}/cancelar/${appointment.cancelToken}`;
+
+    const message = confirmationMessage({
+      barbershop: BARBERSHOP_NAME,
+      barberName: barber?.name ?? "a barbearia",
+      serviceName: service?.name ?? "",
+      date: appointment.date,
+      time: appointment.time,
+      cancelUrl,
+    });
+
+    return Response.json({
+      ok: true,
+      appointment: {
+        id: appointment.id,
+        date: appointment.date,
+        time: appointment.time,
+        service: service?.name ?? "",
+        barber: barber?.name ?? "",
+        cancelToken: appointment.cancelToken,
+      },
+      waLink: buildWaLink(user.phone, message),
+      cancelUrl,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Erro interno";
+    const status = message.includes("reservado") ? 409 : 500;
+    return Response.json({ error: message }, { status });
+  }
+}

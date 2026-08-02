@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: barbearia
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://ywmvpqpoqylkizeyjemw.supabase.co
+      # Segredos: preencha os valores no Render após o deploy
+      # (Settings -> Environment). Nunca coloque segredos aqui.
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: BASE_URL
+        sync: false
+      - key: ADMIN_SECRET
+        sync: false
+      - key: ADMIN_SETUP_KEY
+        sync: false
