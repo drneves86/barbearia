@@ -34,6 +34,8 @@ type Result = {
   barber: string;
   cancelUrl: string;
   waLink: string;
+  clientName: string;
+  clientPhone: string;
 };
 
 export function Wizard() {
@@ -134,8 +136,7 @@ export function Wizard() {
       }
       sessionStorage.removeItem(USER_KEY);
       if (data.waLink) {
-        window.location.href = data.waLink;
-        return;
+        window.open(data.waLink, "_blank", "noopener,noreferrer");
       }
       setResult({
         date: data.appointment.date,
@@ -144,6 +145,8 @@ export function Wizard() {
         barber: data.appointment.barber,
         cancelUrl: data.cancelUrl,
         waLink: data.waLink,
+        clientName: user.name,
+        clientPhone: user.phone,
       });
     } catch {
       setError("Falha de conexão. Verifique sua internet e tente novamente.");
@@ -429,10 +432,9 @@ function SuccessScreen({ result }: { result: Result }) {
       <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gold/15 text-5xl">
         ✅
       </div>
-      <h1 className="text-2xl font-extrabold text-cream">Reserva confirmada!</h1>
+      <h1 className="text-2xl font-extrabold text-cream">Agendamento confirmado!</h1>
       <p className="mt-2 text-muted">
-        Seu horário foi garantido. Agora envie a confirmação no seu WhatsApp
-        para receber os detalhes.
+        Seu horário foi reservado com sucesso.
       </p>
 
       <div className="mt-6 rounded-2xl border border-gold/30 bg-panel p-4 text-left">
@@ -453,50 +455,22 @@ function SuccessScreen({ result }: { result: Result }) {
             <span className="text-muted">Horário</span>
             <span className="font-bold text-gold">{result.time}</span>
           </li>
+          <li className="flex justify-between py-2">
+            <span className="text-muted">Cliente</span>
+            <span className="font-semibold text-cream">{result.clientName}</span>
+          </li>
+          <li className="flex justify-between py-2">
+            <span className="text-muted">Telefone</span>
+            <span className="font-semibold text-cream">{result.clientPhone}</span>
+          </li>
         </ul>
-      </div>
-
-      {result.waLink ? (
-        <a
-          href={result.waLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] text-lg font-bold text-white shadow-[0_8px_30px_rgba(37,211,102,0.3)] transition hover:brightness-110"
-        >
-          Enviar no WhatsApp
-        </a>
-      ) : (
-        <p className="mt-5 rounded-xl border border-line bg-ink-soft/70 p-4 text-center text-sm text-muted">
-          O barbeiro ainda não cadastrou o número de WhatsApp. Avise-o pelo link
-          de cancelamento abaixo.
-        </p>
-      )}
-
-      <div className="mt-4 rounded-xl border border-line bg-ink-soft/70 p-4">
-        <p className="text-xs text-muted">
-          Guarde o link de cancelamento (ele também está na mensagem do
-          WhatsApp):
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard?.writeText(result.cancelUrl);
-          }}
-          className="mt-2 w-full truncate rounded-lg border border-line bg-panel px-3 py-2 text-xs text-gold transition hover:border-gold/50"
-          title={result.cancelUrl}
-        >
-          {result.cancelUrl}
-        </button>
-        <p className="mt-2 text-xs text-muted/60">
-          Use este link para cancelar a qualquer momento.
-        </p>
       </div>
 
       <Link
         href="/"
-        className="mt-5 inline-flex h-12 items-center justify-center rounded-xl border border-line px-6 text-cream transition hover:border-gold/50 hover:text-gold"
+        className="mt-6 flex h-14 w-full items-center justify-center rounded-xl bg-gold text-lg font-bold text-ink transition hover:brightness-110"
       >
-        Voltar ao início
+        Realizar novo agendamento
       </Link>
     </div>
   );

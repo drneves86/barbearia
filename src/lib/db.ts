@@ -348,6 +348,32 @@ export async function createAdmin(input: {
   return data;
 }
 
+export async function listAdmins() {
+  const { data } = await supabaseAdmin()
+    .from("admin_users")
+    .select("id, email, name")
+    .order("created_at", { ascending: true });
+  return (data ?? []) as { id: string; email: string; name: string }[];
+}
+
+export async function updateAdmin(
+  id: string,
+  patch: { email?: string; passwordHash?: string; name?: string }
+): Promise<boolean> {
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.email !== undefined) dbPatch.email = patch.email.toLowerCase().trim();
+  if (patch.passwordHash !== undefined) dbPatch.password_hash = patch.passwordHash;
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+
+  const { error } = await supabaseAdmin().from("admin_users").update(dbPatch).eq("id", id);
+  return !error;
+}
+
+export async function deleteAdmin(id: string): Promise<boolean> {
+  const { error } = await supabaseAdmin().from("admin_users").delete().eq("id", id);
+  return !error;
+}
+
 export async function listAppointments(filters: {
   from?: string;
   to?: string;

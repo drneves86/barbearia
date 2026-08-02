@@ -926,6 +926,209 @@ function SettingsTab() {
         </div>
       </div>
       <ErrorBox message={error} />
+      <AdminsSection />
+    </div>
+  );
+}
+
+type AdminUser = { id: string; email: string; name: string };
+
+function AdminsSection() {
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+
+  async function load() {
+    const data = await api<{ admins: AdminUser[] }>("/api/admin/admins");
+    setAdmins(data.admins);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      try {
+        const data = await api<{ admins: AdminUser[] }>("/api/admin/admins");
+        if (!cancelled) setAdmins(data.admins);
+      } catch (e) {
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "Erro ao carregar.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function create() {
+    if (!email.trim() || password.length < 1) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api("/api/admin/admins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      setEmail("");
+      setPassword("");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao criar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveEdit(id: string) {
+    if (!editEmail.trim()) return;
+    const patch: Record<string, string> = { email: editEmail.trim() };
+    if (editPassword) patch.password = editPassword;
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/api/admin/admins/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      setEditingId(null);
+      setEditPassword("");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao salvar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Excluir este administrador?")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/api/admin/admins/${id}`, { method: "DELETE" });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao excluir.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-line bg-panel p-5">
+      <h2 className="mb-1 text-lg font-bold text-cream">Administradores</h2>
+      <p className="mb-4 text-sm text-muted">
+        Crie novos administradores, edite o e-mail/senha ou exclua os que não
+        forem mais necessários.
+      </p>
+
+      <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <Input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="E-mail do novo admin"
+          type="email"
+        />
+        <Input
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Senha"
+          type="password"
+        />
+        <Button onClick={create} disabled={busy || !email.trim() || password.length < 1}>
+          Adicionar
+        </Button>
+      </div>
+
+      <ErrorBox message={error} />
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Spinner className="h-7 w-7 text-gold" />
+        </div>
+      ) : (
+        <div className="mt-4 space-y-2">
+          {admins.map((a) =>
+            editingId === a.id ? (
+              <div
+                key={a.id}
+                className="grid gap-2 rounded-2xl border border-gold/30 bg-panel-2 p-3 sm:grid-cols-[1fr_1fr_auto]"
+              >
+                <Input
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="E-mail"
+                  type="email"
+                  className="h-10"
+                />
+                <Input
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Nova senha (opcional)"
+                  type="password"
+                  className="h-10"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    className="h-10"
+                    disabled={busy || !editEmail.trim()}
+                    onClick={() => saveEdit(a.id)}
+                  >
+                    Salvar
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                    className="h-10 px-2 text-muted transition hover:text-cream"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                key={a.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-panel-2 p-3"
+              >
+                <div>
+                  <p className="font-semibold text-cream">{a.name}</p>
+                  <p className="text-sm text-muted">{a.email}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(a.id);
+                      setEditEmail(a.email);
+                      setEditPassword("");
+                    }}
+                    className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(a.id)}
+                    className="rounded-lg border border-crimson/40 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-crimson/10"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }
