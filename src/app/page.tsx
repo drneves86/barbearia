@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { RegistrationForm } from "@/components/registration-form";
 import { BARBERSHOP_NAME, formatPrice } from "@/lib/config";
-import { listServices } from "@/lib/db";
+import { listServices, getSettings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,13 @@ export default async function Home() {
     services = await listServices(true);
   } catch {
     services = [];
+  }
+
+  let settings: Record<string, string> = {};
+  try {
+    settings = await getSettings();
+  } catch {
+    settings = {};
   }
 
   return (
@@ -60,10 +67,16 @@ export default async function Home() {
       ) : null}
 
       <footer className="pb-6 text-center text-xs text-muted/60">
-        Segunda a sexta, 08h às 18h •{" "}
-        <Link href="/admin" className="underline hover:text-gold">
-          Acesso administrativo
-        </Link>
+        <div className="space-y-1">
+          <p>Segunda a sexta, 08h às 18h</p>
+          <Link href="/admin" className="underline hover:text-gold">
+            Acesso administrativo
+          </Link>
+        </div>
+        <div className="mt-6 space-y-0.5">
+          <p>{settings.footer_copyright}</p>
+          <p>{settings.footer_credit}</p>
+        </div>
       </footer>
     </div>
   );

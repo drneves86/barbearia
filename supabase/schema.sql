@@ -100,6 +100,23 @@ insert into public.barbers (name) values
 on conflict do nothing;
 
 -- ------------------------------------------------------------
+-- Tabela: settings (configurações editáveis pelo admin)
+-- ------------------------------------------------------------
+create table if not exists public.settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+
+-- ------------------------------------------------------------
+-- Seed: texto do rodapé (editável em Painel -> Configurações)
+-- ------------------------------------------------------------
+insert into public.settings (key, value) values
+  ('footer_copyright', '© 2026 MinhaBarbearia - Todos os direitos reservados'),
+  ('footer_credit', 'Desenvolvido por DIEGO NEVES')
+on conflict (key) do nothing;
+
+-- ------------------------------------------------------------
 -- Acesso via Data API (requerido desde mai/2026: tabelas em
 -- public não são mais expostas automaticamente ao PostgREST).
 -- O app usa apenas a secret key (service_role) no servidor.

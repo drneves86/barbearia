@@ -487,3 +487,32 @@ export async function deleteAppointment(id: string): Promise<boolean> {
     .eq("id", id);
   return !error;
 }
+
+// ------------------------------------------------------------
+// Configurações (rodapé, editável pelo admin)
+// ------------------------------------------------------------
+export type SettingsMap = Record<string, string>;
+
+const DEFAULT_SETTINGS: SettingsMap = {
+  footer_copyright: "© 2026 MinhaBarbearia - Todos os direitos reservados",
+  footer_credit: "Desenvolvido por DIEGO NEVES",
+};
+
+export async function getSettings(): Promise<SettingsMap> {
+  const { data } = await supabaseAdmin()
+    .from("settings")
+    .select("key, value");
+  const map: SettingsMap = { ...DEFAULT_SETTINGS };
+  for (const row of (data ?? []) as { key: string; value: string }[]) {
+    map[row.key] = row.value;
+  }
+  return map;
+}
+
+export async function saveSettings(patch: Record<string, string>): Promise<void> {
+  const rows = Object.entries(patch)
+    .filter(([, value]) => typeof value === "string")
+    .map(([key, value]) => ({ key, value }));
+  if (rows.length === 0) return;
+  await supabaseAdmin().from("settings").upsert(rows, { onConflict: "key" });
+}

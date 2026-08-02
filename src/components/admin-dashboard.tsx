@@ -8,7 +8,7 @@ import { formatDateBR } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/config";
 import type { AppointmentWithDetails, Barber, Service } from "@/lib/types";
 
-type Tab = "appointments" | "barbers" | "services";
+type Tab = "appointments" | "barbers" | "services" | "settings";
 
 async function api<T>(url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(url, opts);
@@ -59,6 +59,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
             ["appointments", "Agendamentos"],
             ["barbers", "Barbeiros"],
             ["services", "Serviços"],
+            ["settings", "Configurações"],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -79,6 +80,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
       {tab === "appointments" ? <AppointmentsTab /> : null}
       {tab === "barbers" ? <BarbersTab /> : null}
       {tab === "services" ? <ServicesTab /> : null}
+      {tab === "settings" ? <SettingsTab /> : null}
     </div>
   );
 }
@@ -93,7 +95,16 @@ function AppointmentsTab() {
   const [barberId, setBarberId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"list" | "calendar">("list");
+  const [view, setView] = useState<"list" | "calendar">(() => {
+    if (typeof window === "undefined") return "list";
+    const saved = window.localStorage.getItem("admin-appointments-view");
+    return saved === "calendar" ? "calendar" : "list";
+  });
+  const [calendarDay, setCalendarDay] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.localStorage.setItem("admin-appointments-view", view);
+  }, [view]);
 
   async function fetchList(): Promise<AppointmentWithDetails[]> {
     const params = new URLSearchParams();
@@ -192,7 +203,10 @@ function AppointmentsTab() {
             <button
               key={key}
               type="button"
-              onClick={() => setView(key)}
+              onClick={() => {
+                setView(key);
+                if (key === "calendar") setCalendarDay(null);
+              }}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 view === key
                   ? "bg-gold text-ink"
@@ -222,7 +236,13 @@ function AppointmentsTab() {
           ))}
         </div>
       ) : (
-        <AppointmentsCalendar items={items} onCancel={cancel} onRemove={remove} />
+        <AppointmentsCalendar
+          items={items}
+          selectedDay={calendarDay}
+          onSelectDay={setCalendarDay}
+          onCancel={cancel}
+          onRemove={remove}
+        />
       )}
     </div>
   );
@@ -290,10 +310,14 @@ function AppointmentCard({
 
 function AppointmentsCalendar({
   items,
+  selectedDay,
+  onSelectDay,
   onCancel,
   onRemove,
 }: {
   items: AppointmentWithDetails[];
+  selectedDay: string | null;
+  onSelectDay: (day: string | null) => void;
   onCancel: (id: string) => void;
   onRemove: (id: string) => void;
 }) {
@@ -302,7 +326,6 @@ function AppointmentsCalendar({
     return first ? new Date(first + "T12:00:00") : new Date();
   });
 
-  const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
   const byDay = useMemo(() => {
     const map = new Map<string, AppointmentWithDetails[]>();
     for (const a of items) {
@@ -325,13 +348,21 @@ function AppointmentsCalendar({
     return cells;
   }, [cursor]);
 
-  const selected = useMemo(() => {
-    return items
-      .filter((a) => a.date.startsWith(monthKey))
-      .sort((x, y) => x.date.localeCompare(y.date) || x.time.localeCompare(y.time));
-  }, [items, monthKey]);
+  const visible = useMemo(() => {
+    const list = selectedDay
+      ? items.filter((a) => a.date === selectedDay)
+      : items;
+    return [...list].sort(
+      (x, y) => x.date.localeCompare(y.date) || x.time.localeCompare(y.time)
+    );
+  }, [items, selectedDay]);
 
   const monthLabel = `${monthsBR[cursor.getMonth()]} ${cursor.getFullYear()}`;
+
+  function toggleDay(day: Date) {
+    const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+    onSelectDay(selectedDay === dateStr ? null : dateStr);
+  }
 
   return (
     <div className="space-y-4">
@@ -370,39 +401,66 @@ function AppointmentsCalendar({
             const dayItems = byDay.get(dateStr) ?? [];
             const hasConfirmed = dayItems.some((a) => a.status === "confirmed");
             const hasCancelled = dayItems.some((a) => a.status === "cancelled");
+            const isSelected = selectedDay === dateStr;
             return (
-              <div
+              <button
                 key={dateStr}
-                className={`relative flex h-11 flex-col items-center justify-center rounded-lg text-sm ${
-                  dayItems.length > 0 ? "bg-panel-2" : "text-muted/40"
+                type="button"
+                onClick={() => toggleDay(day)}
+                className={`relative flex h-11 flex-col items-center justify-center rounded-lg text-sm transition ${
+                  isSelected
+                    ? "bg-gold text-ink"
+                    : dayItems.length > 0
+                      ? "bg-panel-2 hover:border hover:border-gold/50"
+                      : "text-muted/40 hover:bg-panel-2"
                 }`}
               >
-                <span className={dayItems.length > 0 ? "font-semibold text-cream" : ""}>
+                <span className={dayItems.length > 0 || isSelected ? "font-semibold" : ""}>
                   {day.getDate()}
                 </span>
                 {dayItems.length > 0 ? (
                   <span className="absolute bottom-1 flex gap-0.5">
                     {hasConfirmed ? (
-                      <span className="h-1.5 w-1.5 rounded-full bg-gold" />
+                      <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-ink" : "bg-gold"}`} />
                     ) : null}
                     {hasCancelled ? (
-                      <span className="h-1.5 w-1.5 rounded-full bg-crimson" />
+                      <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? "bg-ink/60" : "bg-crimson"}`} />
                     ) : null}
                   </span>
                 ) : null}
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {selected.length === 0 ? (
+      {selectedDay ? (
+        <div className="flex items-center justify-between rounded-2xl border border-gold/30 bg-panel p-3">
+          <p className="text-sm text-muted">
+            Agendamentos de{" "}
+            <span className="font-semibold text-cream">
+              {formatDateBR(selectedDay)}
+            </span>
+          </p>
+          <button
+            type="button"
+            onClick={() => onSelectDay(null)}
+            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-gold transition hover:border-gold/50"
+          >
+            Ver todos os dias
+          </button>
+        </div>
+      ) : null}
+
+      {visible.length === 0 ? (
         <p className="rounded-2xl border border-line bg-panel p-6 text-center text-sm text-muted">
-          Nenhum agendamento neste mês.
+          {selectedDay
+            ? "Nenhum agendamento neste dia."
+            : "Nenhum agendamento encontrado."}
         </p>
       ) : (
         <div className="space-y-2">
-          {selected.map((a) => (
+          {visible.map((a) => (
             <AppointmentCard key={a.id} a={a} onCancel={onCancel} onRemove={onRemove} />
           ))}
         </div>
@@ -738,6 +796,103 @@ function ServicesTab() {
         </div>
       )}
     </div>
+  );
+}
+
+// ------------------------------------------------------------
+// Configurações
+// ------------------------------------------------------------
+function SettingsTab() {
+  const [copyright, setCopyright] = useState("");
+  const [credit, setCredit] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      try {
+        const data = await api<{ settings: Record<string, string> }>(
+          "/api/settings"
+        );
+        if (!cancelled) {
+          setCopyright(data.settings.footer_copyright ?? "");
+          setCredit(data.settings.footer_credit ?? "");
+        }
+      } catch (e) {
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "Erro ao carregar.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    setSaved(false);
+    setError(null);
+    try {
+      await api("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          footer_copyright: copyright,
+          footer_credit: credit,
+        }),
+      });
+      setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-line bg-panel p-5">
+        <h2 className="mb-1 text-lg font-bold text-cream">Rodapé do site</h2>
+        <p className="mb-4 text-sm text-muted">
+          Estes textos aparecem no rodapé da página inicial.
+        </p>
+        <div className="space-y-3">
+          <Field label="Texto de copyright" value={copyright} onChange={setCopyright} />
+          <Field label="Crédito" value={credit} onChange={setCredit} />
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <Button onClick={save} disabled={saving || loading}>
+            {saving ? <Spinner className="h-5 w-5" /> : null}
+            Salvar
+          </Button>
+          {saved ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
+        </div>
+      </div>
+      <ErrorBox message={error} />
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-sm font-medium text-muted">{label}</span>
+      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
   );
 }
 
