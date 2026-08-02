@@ -65,10 +65,10 @@ type UserRow = {
 export async function findOrCreateUser(input: {
   name: string;
   lastName: string;
-  email: string;
+  email?: string;
   phone: string;
 }): Promise<UserRecord> {
-  const email = input.email.trim().toLowerCase() || null;
+  const email = (input.email ?? "").trim().toLowerCase() || null;
   const last_name = input.lastName.trim() || null;
 
   let existing: UserRow | null = null;

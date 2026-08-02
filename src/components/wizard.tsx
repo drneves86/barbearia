@@ -15,7 +15,7 @@ import type { Barber, Service, Slot } from "@/lib/types";
 const USER_KEY = "barbearia-user";
 const STEPS = ["Serviço", "Barbeiro", "Data", "Horário", "Resumo"];
 
-type UserForm = { name: string; lastName: string; email: string; phone: string };
+type UserForm = { name: string; lastName: string; phone: string };
 
 function CancelBookingLink() {
   return (
@@ -50,7 +50,7 @@ export function Wizard() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const [user, setUser] = useState<UserForm>({ name: "", lastName: "", email: "", phone: "" });
+  const [user, setUser] = useState<UserForm>({ name: "", lastName: "", phone: "" });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -391,12 +391,6 @@ export function Wizard() {
                     <dt className="text-xs text-muted">Sobrenome</dt>
                     <dd className="font-semibold text-cream">
                       {user.lastName || "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-muted">E-mail</dt>
-                    <dd className="font-semibold text-cream">
-                      {user.email || "—"}
                     </dd>
                   </div>
                   <div>

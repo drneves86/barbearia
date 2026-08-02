@@ -9,14 +9,13 @@ import { BARBERSHOP_NAME } from "@/lib/config";
 
 const USER_KEY = "barbearia-user";
 
-type Errors = Partial<Record<"name" | "lastName" | "email" | "phone", string>>;
+type Errors = Partial<Record<"name" | "lastName" | "phone", string>>;
 
 export function RegistrationForm() {
   const router = useRouter();
   const [form, setForm] = useState({
     name: "",
     lastName: "",
-    email: "",
     phone: "",
   });
   const [errors, setErrors] = useState<Errors>({});
@@ -37,7 +36,7 @@ export function RegistrationForm() {
         if (path && !errs[path]) errs[path] = issue.message;
       }
       setErrors(errs);
-      setGeneral(errs.name || errs.lastName || errs.email || errs.phone || null);
+      setGeneral(errs.name || errs.lastName || errs.phone || null);
       return false;
     }
     setErrors({});
@@ -77,17 +76,7 @@ export function RegistrationForm() {
           />
         </Field>
       </div>
-      <Field label="E-mail (opcional)" error={errors.email}>
-        <Input
-          type="email"
-          value={form.email}
-          onChange={(e) => set("email", e.target.value)}
-          placeholder="voce@email.com"
-          autoComplete="email"
-        />
-      </Field>
-      <Field
-        label="Telefone (WhatsApp)"
+      <Field label="Telefone (WhatsApp)"
         hint="Usado para enviar a confirmação do horário."
         error={errors.phone}
       >

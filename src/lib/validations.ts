@@ -17,7 +17,8 @@ export const userSchema = z.object({
   email: z
     .string()
     .trim()
-    .refine((v) => v.length === 0 || /\S+@\S+\.\S+/.test(v), "E-mail inválido"),
+    .optional()
+    .refine((v) => !v || v.length === 0 || /\S+@\S+\.\S+/.test(v), "E-mail inválido"),
   phone: phoneSchema,
 });
 
