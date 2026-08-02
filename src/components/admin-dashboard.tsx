@@ -876,6 +876,7 @@ function ServicesTab() {
 function SettingsTab() {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
+  const [location, setLocation] = useState("");
   const [copyright, setCopyright] = useState("");
   const [credit, setCredit] = useState("");
   const [loading, setLoading] = useState(true);
@@ -893,6 +894,7 @@ function SettingsTab() {
         if (!cancelled) {
           setName(data.settings.barbershop_name ?? "");
           setIcon(data.settings.barbershop_icon ?? "");
+          setLocation(data.settings.barbershop_location ?? "");
           setCopyright(data.settings.footer_copyright ?? "");
           setCredit(data.settings.footer_credit ?? "");
         }
@@ -920,6 +922,7 @@ function SettingsTab() {
         body: JSON.stringify({
           barbershop_name: name,
           barbershop_icon: icon,
+          barbershop_location: location,
           footer_copyright: copyright,
           footer_credit: credit,
         }),
@@ -942,6 +945,12 @@ function SettingsTab() {
         <div className="space-y-3">
           <Field label="Nome da barbearia" value={name} onChange={setName} />
           <Field label="Ícone acima do nome" value={icon} onChange={setIcon} />
+          <Field
+            label="Link do Google Maps (endereço)"
+            value={location}
+            onChange={setLocation}
+            placeholder="https://maps.google.com/?q=..."
+          />
         </div>
         <div className="mt-4 flex items-center gap-2">
           <Button onClick={save} disabled={saving || loading}>
@@ -1181,15 +1190,21 @@ function Field({
   label,
   value,
   onChange,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  placeholder?: string;
 }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-muted">{label}</span>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </label>
   );
 }

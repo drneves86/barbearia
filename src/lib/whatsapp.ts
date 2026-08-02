@@ -14,27 +14,34 @@ export function buildWaLink(phone: string, message: string): string {
 export function confirmationMessage(opts: {
   barbershop: string;
   barberName: string;
+  clientName: string;
   serviceName: string;
   price: string;
   date: string;
   time: string;
+  location: string;
   cancelUrl: string;
 }): string {
-  const sep = "____________________________";
-  return [
+  const sep = "__________";
+  const lines = [
     `💈 ${opts.barbershop} 💈`,
     "",
     "CONFIRMAÇÃO DE AGENDAMENTO",
     "",
-    "",
     `👥 Olá, ${opts.barberName}!`,
     sep,
     "Detalhes do agendamento:",
-    `💇🏽‍♂️ PROFISSIONAL: ${opts.barberName}`,
-    `🧰 SERVIÇO: ${opts.serviceName}`,
-    `💰 VALOR: ${opts.price}`,
+    `💇🏻‍♂️ CLIENTE: ${opts.clientName}`,
+    `✂️ PROFISSIONAL: ${opts.barberName}`,
+    `💼 SERVIÇO: ${opts.serviceName}`,
+    `💵 VALOR: ${opts.price}`,
     `📌 DIA: ${formatDateBR(opts.date)}`,
-    `⌚ HORÁRIO: ${opts.time}`,
+    `🕜 HORÁRIO: ${opts.time}`,
+  ];
+  if (opts.location) {
+    lines.push(`📍LOCAL: ${opts.location}`);
+  }
+  lines.push(
     sep,
     "✅ Seu horário já foi confirmado automaticamente.",
     sep,
@@ -42,8 +49,9 @@ export function confirmationMessage(opts: {
     opts.cancelUrl,
     sep,
     "⏰ O cancelamento pode ser feito até 30 minuto(s) antes do horário agendado.",
-    sep,
-  ].join("\n");
+    sep
+  );
+  return lines.join("\n");
 }
 
 export function cancellationMessage(opts: {

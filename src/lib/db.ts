@@ -522,6 +522,8 @@ export type SettingsMap = Record<string, string>;
 const DEFAULT_SETTINGS: SettingsMap = {
   barbershop_name: "Minha Barbearia",
   barbershop_icon: "💈",
+  barbershop_location:
+    "https://maps.google.com/?q=Rua%20S%C3%A3o%20Bento%20do%20Sapuca%C3%AD%2C%20594%2C%20Pindamonhangaba-SP%2C%2012420-190",
   footer_copyright: "© 2026 MinhaBarbearia - Todos os direitos reservados",
   footer_credit: "Desenvolvido por DIEGO NEVES",
 };
