@@ -877,6 +877,7 @@ function SettingsTab() {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("");
   const [location, setLocation] = useState("");
+  const [address, setAddress] = useState("");
   const [copyright, setCopyright] = useState("");
   const [credit, setCredit] = useState("");
   const [loading, setLoading] = useState(true);
@@ -897,6 +898,7 @@ function SettingsTab() {
           setName(data.settings.barbershop_name ?? "");
           setIcon(data.settings.barbershop_icon ?? "");
           setLocation(data.settings.barbershop_location ?? "");
+          setAddress(data.settings.barbershop_address ?? "");
           setCopyright(data.settings.footer_copyright ?? "");
           setCredit(data.settings.footer_credit ?? "");
         }
@@ -925,6 +927,7 @@ function SettingsTab() {
           barbershop_name: name,
           barbershop_icon: icon,
           barbershop_location: location,
+          barbershop_address: address,
         }),
       });
       setSavedIdentity(true);
@@ -971,6 +974,12 @@ function SettingsTab() {
             value={location}
             onChange={setLocation}
             placeholder="https://maps.google.com/?q=..."
+          />
+          <Field
+            label="Endereço exibido na mensagem"
+            value={address}
+            onChange={setAddress}
+            placeholder="Rua ..., 000 - Cidade-SP, 00000-000"
           />
         </div>
         <div className="mt-4 flex items-center gap-2">

@@ -19,6 +19,7 @@ export function confirmationMessage(opts: {
   price: string;
   date: string;
   time: string;
+  address: string;
   location: string;
   cancelUrl: string;
 }): string {
@@ -38,8 +39,11 @@ export function confirmationMessage(opts: {
     `📌 DIA: ${formatDateBR(opts.date)}`,
     `🕜 HORÁRIO: ${opts.time}`,
   ];
+  if (opts.address) {
+    lines.push(`📍 LOCAL: ${opts.address}`);
+  }
   if (opts.location) {
-    lines.push(`📍LOCAL: ${opts.location}`);
+    lines.push(`🗺️ Abrir no Google Maps: ${opts.location}`);
   }
   lines.push(
     sep,

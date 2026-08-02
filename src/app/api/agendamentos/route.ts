@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       price: formatPrice(service?.priceCents ?? 0),
       date: appointment.date,
       time: appointment.time,
+      address: settings.barbershop_address || "",
       location: settings.barbershop_location || "",
       cancelUrl,
     });
