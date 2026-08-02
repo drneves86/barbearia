@@ -1,4 +1,4 @@
-const CACHE = "barbearia-v1";
+const CACHE = "barbearia-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -33,18 +33,36 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Arquivos estáticos (js, css, imagens, fontes): cache-first
+  if (/\.(?:js|css|png|jpg|jpeg|svg|gif|webp|woff2?|ico)$/.test(url.pathname)) {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) =>
+          cached ||
+          fetch(request).then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          })
+      )
+    );
+    return;
+  }
+
+  // Navegação (páginas HTML): network-first, com fallback para o cache
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached || caches.match("/"));
-    })
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) => cached || caches.match("/"))
+      )
   );
 });
