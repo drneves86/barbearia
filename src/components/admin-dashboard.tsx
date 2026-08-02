@@ -22,7 +22,20 @@ async function api<T>(url: string, opts?: RequestInit): Promise<T> {
 
 export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("appointments");
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "appointments";
+    const saved = window.localStorage.getItem("admin-dashboard-tab");
+    return saved === "appointments" ||
+      saved === "barbers" ||
+      saved === "services" ||
+      saved === "settings"
+      ? saved
+      : "appointments";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("admin-dashboard-tab", tab);
+  }, [tab]);
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
