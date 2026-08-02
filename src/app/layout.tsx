@@ -19,6 +19,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings().catch(() => ({} as Record<string, string>));
   const shopName = settings.barbershop_name || "Minha Barbearia";
   return {
+    metadataBase: new URL(
+      process.env.BASE_URL || "https://barbearia-qosa.onrender.com"
+    ),
     title: {
       default: shopName,
       template: `%s | ${shopName}`,
