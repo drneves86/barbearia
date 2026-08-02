@@ -16,6 +16,17 @@ const USER_KEY = "barbearia-user";
 const STEPS = ["Serviço", "Barbeiro", "Data", "Horário", "Resumo"];
 
 type UserForm = { name: string; lastName: string; email: string; phone: string };
+
+function CancelBookingLink() {
+  return (
+    <Link
+      href="/"
+      className="mt-4 flex h-12 w-full items-center justify-center rounded-xl border border-red-500/40 text-sm font-semibold text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+    >
+      Cancelar agendamento
+    </Link>
+  );
+}
 type Result = {
   date: string;
   time: string;
@@ -122,6 +133,10 @@ export function Wizard() {
         return;
       }
       sessionStorage.removeItem(USER_KEY);
+      if (data.waLink) {
+        window.location.href = data.waLink;
+        return;
+      }
       setResult({
         date: data.appointment.date,
         time: data.appointment.time,
@@ -200,6 +215,7 @@ export function Wizard() {
                   </button>
                 ))}
               </div>
+              <CancelBookingLink />
             </div>
           )}
 
@@ -233,6 +249,7 @@ export function Wizard() {
               <Button variant="ghost" onClick={() => setStep(0)}>
                 ← Voltar
               </Button>
+              <CancelBookingLink />
             </div>
           )}
 
@@ -251,6 +268,7 @@ export function Wizard() {
               <Button variant="ghost" onClick={() => setStep(1)}>
                 ← Voltar
               </Button>
+              <CancelBookingLink />
             </div>
           )}
 
@@ -305,6 +323,8 @@ export function Wizard() {
                   Continuar →
                 </Button>
               </div>
+
+              <CancelBookingLink />
 
               <TimePicker
                 open={pickerOpen}
@@ -399,6 +419,8 @@ export function Wizard() {
                   Confirmar Reserva
                 </Button>
               </div>
+
+              <CancelBookingLink />
             </div>
           )}
         </>

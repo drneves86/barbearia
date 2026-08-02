@@ -17,7 +17,7 @@ export function CancelForm({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [waLink, setWaLink] = useState<string | null>(null);
+  const [cancelled, setCancelled] = useState(false);
 
   async function onCancel() {
     setLoading(true);
@@ -33,7 +33,10 @@ export function CancelForm({
         setError(data.error ?? "Não foi possível cancelar.");
         return;
       }
-      setWaLink(data.waLink);
+      setCancelled(true);
+      if (data.waLink) {
+        window.location.href = data.waLink;
+      }
     } catch {
       setError("Falha de conexão. Tente novamente.");
     } finally {
@@ -41,7 +44,7 @@ export function CancelForm({
     }
   }
 
-  if (waLink) {
+  if (cancelled) {
     return (
       <div className="mt-8 rounded-2xl border border-gold/30 bg-panel p-6 text-center">
         <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-3xl">
@@ -52,20 +55,9 @@ export function CancelForm({
           Seu agendamento com o barbeiro {barberName} no dia {date} às {time}{" "}
           foi removido da agenda.
         </p>
-        {waLink ? (
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] font-bold text-white transition hover:brightness-110"
-          >
-            Avisar no WhatsApp
-          </a>
-        ) : (
-          <p className="mt-5 rounded-xl border border-line bg-ink-soft/70 p-4 text-center text-sm text-muted">
-            O barbeiro ainda não cadastrou o número de WhatsApp.
-          </p>
-        )}
+        <p className="mt-5 rounded-xl border border-line bg-ink-soft/70 p-4 text-center text-sm text-muted">
+          O barbeiro ainda não cadastrou o número de WhatsApp.
+        </p>
         <Link
           href="/"
           className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border border-line text-cream transition hover:border-gold/50 hover:text-gold"
