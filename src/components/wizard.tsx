@@ -385,7 +385,7 @@ export function Wizard() {
                       placeholder="João"
                     />
                   </Field>
-                  <Field label="Sobrenome" error={fieldErrors.lastName}>
+                  <Field label="Sobrenome (opcional)" error={fieldErrors.lastName}>
                     <Input
                       value={user.lastName}
                       onChange={(e) => setField("lastName", e.target.value)}
@@ -394,7 +394,7 @@ export function Wizard() {
                   </Field>
                 </div>
                 <div className="mt-3">
-                  <Field label="E-mail" error={fieldErrors.email}>
+                  <Field label="E-mail (opcional)" error={fieldErrors.email}>
                     <Input
                       type="email"
                       value={user.email}

@@ -47,27 +47,48 @@ export async function listBarbers(activeOnly = true): Promise<Barber[]> {
 // ------------------------------------------------------------
 // Usuários
 // ------------------------------------------------------------
+type UserRow = {
+  id: string;
+  name: string;
+  last_name: string | null;
+  email: string | null;
+  phone: string;
+};
+
 export async function findOrCreateUser(input: {
   name: string;
   lastName: string;
   email: string;
   phone: string;
 }): Promise<UserRecord> {
-  const email = input.email.trim().toLowerCase();
+  const email = input.email.trim().toLowerCase() || null;
+  const last_name = input.lastName.trim() || null;
 
-  const { data: existing } = await supabaseAdmin()
-    .from("users")
-    .select("id, name, last_name, email, phone")
-    .eq("email", email)
-    .maybeSingle();
+  let existing: UserRow | null = null;
+
+  if (email) {
+    const { data } = await supabaseAdmin()
+      .from("users")
+      .select("id, name, last_name, email, phone")
+      .eq("email", email)
+      .maybeSingle();
+    existing = (data as UserRow | null) ?? null;
+  } else {
+    const { data } = await supabaseAdmin()
+      .from("users")
+      .select("id, name, last_name, email, phone")
+      .eq("phone", input.phone.trim())
+      .limit(1);
+    existing = (data?.[0] as UserRow | undefined) ?? null;
+  }
 
   if (existing) {
     return {
-      id: existing.id as string,
-      name: existing.name as string,
-      lastName: existing.last_name as string,
-      email: existing.email as string,
-      phone: existing.phone as string,
+      id: existing.id,
+      name: existing.name,
+      lastName: existing.last_name ?? "",
+      email: existing.email ?? "",
+      phone: existing.phone,
     };
   }
 
@@ -75,7 +96,7 @@ export async function findOrCreateUser(input: {
     .from("users")
     .insert({
       name: input.name.trim(),
-      last_name: input.lastName.trim(),
+      last_name,
       email,
       phone: input.phone.trim(),
     })
@@ -88,8 +109,8 @@ export async function findOrCreateUser(input: {
   return {
     id: created.id as string,
     name: created.name as string,
-    lastName: created.last_name as string,
-    email: created.email as string,
+    lastName: (created.last_name as string) ?? "",
+    email: (created.email as string) ?? "",
     phone: created.phone as string,
   };
 }
@@ -188,7 +209,7 @@ const APPOINTMENT_SELECT = `
   barbers ( name )
 `;
 
-type NestedUsers = { name: string; last_name: string; email: string; phone: string };
+type NestedUsers = { name: string; last_name: string | null; email: string | null; phone: string };
 type NestedServices = { name: string; price_cents: number; emoji: string };
 type NestedBarbers = { name: string };
 

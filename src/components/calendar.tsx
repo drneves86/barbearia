@@ -13,7 +13,7 @@ import {
   subMonths,
 } from "date-fns";
 
-const WEEKDAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const WEEKDAYS = ["S", "T", "Q", "Q", "S", "S", "D"];
 const WEEKDAY_LONG = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
 export function Calendar({

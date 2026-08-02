@@ -11,8 +11,8 @@ create extension if not exists "pgcrypto";
 create table if not exists public.users (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  last_name text not null,
-  email text not null unique,
+  last_name text,
+  email text unique,
   phone text not null,
   created_at timestamptz not null default now()
 );
@@ -105,6 +105,15 @@ on conflict do nothing;
 -- ------------------------------------------------------------
 grant usage on schema public to service_role;
 grant select, insert, update, delete on all tables in schema public to service_role;
+
+-- ------------------------------------------------------------
+-- Migração (bancos já criados antes da versão que tornou
+-- sobrenome e e-mail opcionais):
+--   alter table public.users alter column last_name drop not null;
+--   alter table public.users alter column email drop not null;
+-- Se você já rodou este arquivo antes de 03/2026 com as colunas
+-- NOT NULL, execute as duas linhas acima no SQL Editor.
+-- ------------------------------------------------------------
 
 -- ------------------------------------------------------------
 -- Observação: o primeiro usuário administrador NÃO entra aqui.

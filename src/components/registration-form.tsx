@@ -68,7 +68,7 @@ export function RegistrationForm() {
             autoComplete="given-name"
           />
         </Field>
-        <Field label="Sobrenome" error={errors.lastName}>
+        <Field label="Sobrenome (opcional)" error={errors.lastName}>
           <Input
             value={form.lastName}
             onChange={(e) => set("lastName", e.target.value)}
@@ -77,7 +77,7 @@ export function RegistrationForm() {
           />
         </Field>
       </div>
-      <Field label="E-mail" error={errors.email}>
+      <Field label="E-mail (opcional)" error={errors.email}>
         <Input
           type="email"
           value={form.email}

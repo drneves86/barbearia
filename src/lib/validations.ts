@@ -10,8 +10,14 @@ export const phoneSchema = z
 
 export const userSchema = z.object({
   name: z.string().trim().min(2, "Informe o nome"),
-  lastName: z.string().trim().min(2, "Informe o sobrenome"),
-  email: z.email("E-mail inválido"),
+  lastName: z
+    .string()
+    .trim()
+    .refine((v) => v.length === 0 || v.length >= 2, "Sobrenome muito curto"),
+  email: z
+    .string()
+    .trim()
+    .refine((v) => v.length === 0 || /\S+@\S+\.\S+/.test(v), "E-mail inválido"),
   phone: phoneSchema,
 });
 
