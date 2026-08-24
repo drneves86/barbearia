@@ -14,16 +14,16 @@ function ShopIcon({ icon }: { icon: string }) {
         <Image
           src={icon}
           alt="Logo"
-          width={128}
-          height={128}
-          className="h-auto w-auto max-h-24 max-w-24 object-contain bg-panel"
+          width={256}
+          height={256}
+          className="h-auto w-auto max-h-48 max-w-48 object-contain bg-panel"
           unoptimized
         />
       </div>
     );
   }
   return (
-    <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl border border-gold/40 bg-panel px-4 py-3 text-3xl shadow-[0_0_40px_rgba(212,175,55,0.25)]">
+    <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl border border-gold/40 bg-panel px-2 py-1 text-sm shadow-[0_0_40px_rgba(212,175,55,0.25)]">
       {icon}
     </div>
   );

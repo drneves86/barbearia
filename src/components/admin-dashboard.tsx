@@ -32,6 +32,10 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
     return "appointments";
   });
 
+  const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+
   useEffect(() => {
     localStorage.setItem("admin-tab", tab);
   }, [tab]);
@@ -712,10 +716,53 @@ function BarbersTab() {
 ) : null}
               </div>
               <div className="min-w-0 flex-1 space-y-0.5">
-                <p className="font-semibold text-cream">{b.name}</p>
-                <p className="text-sm text-muted">{b.phone || "Sem WhatsApp cadastrado"}</p>
+                {editingBarberId === b.id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Nome"
+                      className="h-9 w-full rounded-lg border border-line bg-panel px-3 text-sm text-cream outline-none transition focus:border-gold/60 focus:ring-1 focus:ring-gold/20"
+                    />
+                    <input
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      placeholder="(12) 99600-0000"
+                      inputMode="tel"
+                      className="h-9 w-full rounded-lg border border-line bg-panel px-3 text-sm text-cream outline-none transition focus:border-gold/60 focus:ring-1 focus:ring-gold/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => save(b, { name: newName, phone: newPhone })}
+                      className="shrink-0 rounded-lg bg-gold/20 px-2.5 py-1 text-xs font-semibold text-gold transition hover:bg-gold/30"
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingBarberId(null)}
+                      className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-xs text-muted transition hover:text-cream"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="font-semibold text-cream">{b.name}</p>
+                    <p className="text-sm text-muted">{b.phone || "Sem WhatsApp cadastrado"}</p>
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-1.5">
+                {editingBarberId !== b.id && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditingBarberId(b.id); setNewName(b.name); setNewPhone(b.phone); }}
+                    className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted transition hover:border-gold/50 hover:text-gold"
+                  >
+                    Editar
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => save(b, { active: !b.active })}
@@ -750,7 +797,7 @@ function ServicesTab() {
   const [items, setItems] = useState<Service[]>([]);
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
-  const [newEmoji, setNewEmoji] = useState("💈");
+  const [newEmoji, setNewEmoji] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -794,7 +841,7 @@ function ServicesTab() {
       });
       setNewName("");
       setNewPrice("");
-      setNewEmoji("💈");
+      setNewEmoji("");
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao criar.");
