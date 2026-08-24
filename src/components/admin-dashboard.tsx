@@ -653,21 +653,21 @@ function BarbersTab() {
           {items.map((b) => (
             <div
               key={b.id}
-              className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-panel p-4"
+              className="flex items-center gap-3 rounded-2xl border border-line bg-panel p-3 sm:p-4"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {b.photoUrl ? (
                   <img
                     src={b.photoUrl}
                     alt={b.name}
-                    className="h-14 w-14 rounded-full object-cover"
+                    className="h-12 w-12 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold/40 bg-panel-2 text-2xl">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-panel-2 text-xl">
                     🧑‍💼
                   </span>
                 )}
-                <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
+                <label className="cursor-pointer rounded-lg border border-line px-2 py-1 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
                   📷 Foto
                   <input
                     type="file"
@@ -710,18 +710,18 @@ function BarbersTab() {
                   </button>
                 ) : null}
               </div>
-              <div className="min-w-0 flex-1 space-y-1">
+              <div className="min-w-0 flex-1 space-y-0.5">
                 <EditableName value={b.name} onSave={(name) => save(b, { name })} />
                 <EditablePhone
                   value={b.phone}
                   onSave={(phone) => save(b, { phone })}
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => save(b, { active: !b.active })}
-                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                  className={`rounded-full px-2.5 py-1 text-xs font-bold transition ${
                     b.active
                       ? "bg-gold/15 text-gold hover:bg-gold/25"
                       : "bg-crimson/15 text-red-300 hover:bg-crimson/25"
@@ -732,7 +732,7 @@ function BarbersTab() {
                 <button
                   type="button"
                   onClick={() => remove(b)}
-                  className="rounded-lg border border-crimson/40 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-crimson/10"
+                  className="rounded-lg border border-crimson/40 px-2.5 py-1 text-xs font-semibold text-red-300 transition hover:bg-crimson/10"
                 >
                   Excluir
                 </button>
@@ -950,7 +950,15 @@ function ServicesTab() {
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{s.emoji}</span>
+                    {s.imageUrl ? (
+                      <img
+                        src={s.imageUrl}
+                        alt={s.name}
+                        className="h-10 w-10 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl">{s.emoji}</span>
+                    )}
                     <div>
                       <p className="font-semibold text-cream">{s.name}</p>
                       <p className="text-sm font-bold text-gold">
