@@ -89,8 +89,8 @@ export function RegistrationForm({ barbershopName = "Minha Barbearia" }: { barbe
         Agendar meu horário
       </Button>
       <p className="text-center text-xs text-muted/70">
-        Você poderá escolher o serviço, o barbeiro, a data e o horário na
-        próxima etapa. Bem-vindo à {barbershopName}.
+        Bem-vindo à {barbershopName}.<br />
+        Na próxima etapa você poderá escolher o serviço, o barbeiro, a data e horário.
       </p>
     </form>
   );
