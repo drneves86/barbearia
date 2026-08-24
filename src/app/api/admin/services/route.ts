@@ -1,5 +1,6 @@
 import { getAdminSession } from "@/lib/auth";
-import { createService, listServices, supabaseAdmin } from "@/lib/db";
+import { createService, listServices } from "@/lib/db";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
