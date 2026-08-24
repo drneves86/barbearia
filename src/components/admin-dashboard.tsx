@@ -702,6 +702,8 @@ function ServicesTab() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -774,6 +776,63 @@ function ServicesTab() {
     }
   }
 
+  function handleDragStart(e: React.DragEvent, id: string) {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+
+  function handleDragOver(e: React.DragEvent, id: string) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (id !== dragOverId) setDragOverId(id);
+  }
+
+  function handleDragLeave() {
+    setDragOverId(null);
+  }
+
+  async function handleDrop(e: React.DragEvent, targetId: string) {
+    e.preventDefault();
+    setDragOverId(null);
+    if (!dragId || dragId === targetId) {
+      setDragId(null);
+      return;
+    }
+
+    const fromIndex = items.findIndex((s) => s.id === dragId);
+    const toIndex = items.findIndex((s) => s.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) {
+      setDragId(null);
+      return;
+    }
+
+    const reordered = [...items];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    const positions = reordered.map((s, i) => ({ id: s.id, position: i }));
+
+    setItems(reordered);
+    setDragId(null);
+
+    try {
+      await api("/api/admin/services", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ positions }),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao reordenar.");
+      await load();
+    }
+  }
+
+  function handleDragEnd() {
+    setDragId(null);
+    setDragOverId(null);
+  }
+
   return (
     <div className="space-y-4">
       <ErrorBox message={error} />
@@ -810,7 +869,19 @@ function ServicesTab() {
           {items.map((s) => (
             <div
               key={s.id}
-              className="rounded-2xl border border-line bg-panel p-4"
+              draggable={editingId !== s.id}
+              onDragStart={(e) => handleDragStart(e, s.id)}
+              onDragOver={(e) => handleDragOver(e, s.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, s.id)}
+              onDragEnd={handleDragEnd}
+              className={`rounded-2xl border bg-panel p-4 transition-all ${
+                dragId === s.id
+                  ? "opacity-50 border-gold/60"
+                  : dragOverId === s.id
+                  ? "border-gold/60 scale-[1.02]"
+                  : "border-line"
+              } ${editingId !== s.id ? "cursor-grab active:cursor-grabbing" : ""}`}
             >
               {editingId === s.id ? (
                 <EditableService
@@ -841,10 +912,7 @@ function ServicesTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1.5 cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
-                      {s.imageUrl ? (
-                        <img src={s.imageUrl} alt="" className="h-5 w-5 rounded object-cover" />
-                      ) : null}
+                    <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
                       📷 Foto
                       <input
                         type="file"

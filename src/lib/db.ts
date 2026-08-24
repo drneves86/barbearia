@@ -19,17 +19,18 @@ function normalizeTime(value: string): string {
 export async function listServices(activeOnly = true): Promise<Service[]> {
   let q = supabaseAdmin()
     .from("services")
-    .select("id, name, price_cents, emoji, image_url, active")
-    .order("price_cents", { ascending: true });
+    .select("id, name, price_cents, emoji, image_url, position, active")
+    .order("position", { ascending: true });
   if (activeOnly) q = q.eq("active", true);
   const { data } = await q;
-  return ((data ?? []) as { id: string; name: string; price_cents: number; emoji: string; image_url: string | null; active: boolean }[]).map(
+  return ((data ?? []) as { id: string; name: string; price_cents: number; emoji: string; image_url: string | null; position: number; active: boolean }[]).map(
     (r) => ({
       id: r.id,
       name: r.name,
       priceCents: r.price_cents,
       emoji: r.emoji,
       imageUrl: r.image_url,
+      position: r.position,
       active: r.active,
     })
   );
@@ -458,6 +459,15 @@ export async function createService(input: {
   emoji: string;
   imageUrl?: string;
 }): Promise<Service> {
+  const { data: maxPos } = await supabaseAdmin()
+    .from("services")
+    .select("position")
+    .order("position", { ascending: false })
+    .limit(1)
+    .single();
+
+  const newPosition = (maxPos?.position ?? -1) + 1;
+
   const { data, error } = await supabaseAdmin()
     .from("services")
     .insert({
@@ -465,8 +475,9 @@ export async function createService(input: {
       price_cents: input.priceCents,
       emoji: input.emoji || "💈",
       image_url: input.imageUrl || null,
+      position: newPosition,
     })
-    .select("id, name, price_cents, emoji, image_url, active")
+    .select("id, name, price_cents, emoji, image_url, position, active")
     .single();
   if (error) throw new Error("Não foi possível criar o serviço.");
   return {
@@ -475,26 +486,28 @@ export async function createService(input: {
     priceCents: data.price_cents as number,
     emoji: data.emoji as string,
     imageUrl: data.image_url as string | null,
+    position: data.position as number,
     active: data.active as boolean,
   };
 }
 
 export async function updateService(
   id: string,
-  patch: { name?: string; priceCents?: number; emoji?: string; imageUrl?: string | null; active?: boolean }
+  patch: { name?: string; priceCents?: number; emoji?: string; imageUrl?: string | null; position?: number; active?: boolean }
 ): Promise<Service> {
   const dbPatch: Record<string, unknown> = {};
   if (patch.name !== undefined) dbPatch.name = patch.name.trim();
   if (patch.priceCents !== undefined) dbPatch.price_cents = patch.priceCents;
   if (patch.emoji !== undefined) dbPatch.emoji = patch.emoji;
   if (patch.imageUrl !== undefined) dbPatch.image_url = patch.imageUrl;
+  if (patch.position !== undefined) dbPatch.position = patch.position;
   if (patch.active !== undefined) dbPatch.active = patch.active;
 
   const { data, error } = await supabaseAdmin()
     .from("services")
     .update(dbPatch)
     .eq("id", id)
-    .select("id, name, price_cents, emoji, image_url, active")
+    .select("id, name, price_cents, emoji, image_url, position, active")
     .single();
   if (error) throw new Error("Não foi possível atualizar o serviço.");
   return {
@@ -503,6 +516,7 @@ export async function updateService(
     priceCents: data.price_cents as number,
     emoji: data.emoji as string,
     imageUrl: data.image_url as string | null,
+    position: data.position as number,
     active: data.active as boolean,
   };
 }

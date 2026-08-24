@@ -37,6 +37,7 @@ create table if not exists public.services (
   price_cents integer not null default 0,
   emoji text not null default '💈',
   image_url text,
+  position integer not null default 0,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -138,6 +139,12 @@ grant select, insert, update, delete on all tables in schema public to service_r
 -- ------------------------------------------------------------
 -- Migração para a coluna de imagem do serviço:
 --   alter table public.services add column if not exists image_url text;
+-- ------------------------------------------------------------
+-- Migração para a coluna de posição do serviço:
+--   alter table public.services add column if not exists position integer not null default 0;
+--   update public.services set position = sub.row_number - 1
+--   from (select id, row_number() over (order by created_at) from public.services) sub
+--   where public.services.id = sub.id;
 -- ------------------------------------------------------------
 
 -- ------------------------------------------------------------

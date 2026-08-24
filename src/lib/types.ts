@@ -4,6 +4,7 @@ export type Service = {
   priceCents: number;
   emoji: string;
   imageUrl: string | null;
+  position: number;
   active: boolean;
 };
 
