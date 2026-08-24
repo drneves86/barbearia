@@ -44,6 +44,22 @@ export function Wizard() {
   const [loadingCatalog, setLoadingCatalog] = useState(true);
 
   const [step, setStep] = useState(0);
+
+  // Polling: atualiza a lista de serviços/barbeiros a cada 30s
+  // para refletir alterações feitas no painel admin (sem precisar atualizar a página)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/catalog", { cache: "no-store" });
+        const data = await res.json();
+        if (data.services) setServices(data.services);
+        if (data.barbers) setBarbers(data.barbers);
+      } catch {
+        // Ignorar erros de rede periódicas
+      }
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [barberId, setBarberId] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
