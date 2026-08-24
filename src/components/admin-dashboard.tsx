@@ -32,10 +32,6 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
     return "appointments";
   });
 
-  const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
-  const [newName, setNewName] = useState("");
-  const [newPhone, setNewPhone] = useState("");
-
   useEffect(() => {
     localStorage.setItem("admin-tab", tab);
   }, [tab]);
@@ -557,6 +553,7 @@ function BarbersTab() {
   const [items, setItems] = useState<Barber[]>([]);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
