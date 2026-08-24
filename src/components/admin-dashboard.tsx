@@ -1319,6 +1319,34 @@ function EditableService({
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center gap-3">
+        {service.imageUrl ? (
+          <img
+            src={service.imageUrl}
+            alt={service.name}
+            className="h-16 w-16 rounded-lg object-cover"
+          />
+        ) : null}
+        <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold">
+          {uploading ? "Enviando..." : service.imageUrl ? "📷 Trocar foto" : "📷 Enviar foto"}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={handleImageUpload}
+            disabled={uploading}
+          />
+        </label>
+        {service.imageUrl ? (
+          <button
+            type="button"
+            onClick={() => onSave({ imageUrl: null })}
+            className="text-xs text-red-400 transition hover:text-red-300"
+          >
+            Remover foto
+          </button>
+        ) : null}
+      </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_70px_auto]">
         <Input
           value={name}
@@ -1355,34 +1383,6 @@ function EditableService({
             ✕
           </button>
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        {service.imageUrl ? (
-          <img
-            src={service.imageUrl}
-            alt={service.name}
-            className="h-16 w-16 rounded-lg object-cover"
-          />
-        ) : null}
-        <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold">
-          {uploading ? "Enviando..." : service.imageUrl ? "📷 Trocar foto" : "📷 Enviar foto"}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            className="hidden"
-            onChange={handleImageUpload}
-            disabled={uploading}
-          />
-        </label>
-        {service.imageUrl ? (
-          <button
-            type="button"
-            onClick={() => onSave({ imageUrl: null })}
-            className="text-xs text-red-400 transition hover:text-red-300"
-          >
-            Remover foto
-          </button>
-        ) : null}
       </div>
     </div>
   );
