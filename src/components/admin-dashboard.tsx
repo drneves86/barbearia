@@ -601,7 +601,7 @@ function BarbersTab() {
 
   async function save(
     b: Barber,
-    patch: { name?: string; phone?: string; active?: boolean }
+    patch: { name?: string; phone?: string; photoUrl?: string | null; active?: boolean }
   ) {
     try {
       await api(`/api/admin/barbers/${b.id}`, {
@@ -653,8 +653,63 @@ function BarbersTab() {
           {items.map((b) => (
             <div
               key={b.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-panel p-4"
+              className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-panel p-4"
             >
+              <div className="flex items-center gap-3">
+                {b.photoUrl ? (
+                  <img
+                    src={b.photoUrl}
+                    alt={b.name}
+                    className="h-14 w-14 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold/40 bg-panel-2 text-2xl">
+                    🧑‍💼
+                  </span>
+                )}
+                <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
+                  📷 Foto
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        setError("Arquivo muito grande. Máximo 5MB.");
+                        return;
+                      }
+                      setBusy(true);
+                      try {
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        formData.append("serviceId", `barber-${b.id}`);
+                        const res = await fetch("/api/admin/upload", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error);
+                        await save(b, { photoUrl: data.url });
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  />
+                </label>
+                {b.photoUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => save(b, { photoUrl: null })}
+                    className="text-xs text-red-400 transition hover:text-red-300"
+                  >
+                    🗑️
+                  </button>
+                ) : null}
+              </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <EditableName value={b.name} onSave={(name) => save(b, { name })} />
                 <EditablePhone
@@ -895,15 +950,7 @@ function ServicesTab() {
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    {s.imageUrl ? (
-                      <img
-                        src={s.imageUrl}
-                        alt={s.name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <span className="text-2xl">{s.emoji}</span>
-                    )}
+                    <span className="text-2xl">{s.emoji}</span>
                     <div>
                       <p className="font-semibold text-cream">{s.name}</p>
                       <p className="text-sm font-bold text-gold">
@@ -1457,13 +1504,6 @@ function EditableService({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
-        {service.imageUrl ? (
-          <img
-            src={service.imageUrl}
-            alt={service.name}
-            className="h-16 w-16 rounded-lg object-cover"
-          />
-        ) : null}
         <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold">
           {uploading ? "Enviando..." : service.imageUrl ? "📷 Trocar foto" : "📷 Enviar foto"}
           <input

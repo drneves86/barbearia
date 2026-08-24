@@ -12,6 +12,7 @@ export type Barber = {
   id: string;
   name: string;
   phone: string;
+  photoUrl: string | null;
   active: boolean;
 };
 

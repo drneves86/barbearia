@@ -39,15 +39,16 @@ export async function listServices(activeOnly = true): Promise<Service[]> {
 export async function listBarbers(activeOnly = true): Promise<Barber[]> {
   let q = supabaseAdmin()
     .from("barbers")
-    .select("id, name, phone, active")
+    .select("id, name, phone, photo_url, active")
     .order("name", { ascending: true });
   if (activeOnly) q = q.eq("active", true);
   const { data } = await q;
-  return ((data ?? []) as { id: string; name: string; phone: string | null; active: boolean }[]).map(
+  return ((data ?? []) as { id: string; name: string; phone: string | null; photo_url: string | null; active: boolean }[]).map(
     (r) => ({
       id: r.id,
       name: r.name,
       phone: r.phone ?? "",
+      photoUrl: r.photo_url,
       active: r.active,
     })
   );
@@ -412,37 +413,40 @@ export async function createBarber(name: string, phone = ""): Promise<Barber> {
   const { data, error } = await supabaseAdmin()
     .from("barbers")
     .insert({ name: name.trim(), phone: phone.trim() || null })
-    .select("id, name, phone, active")
+    .select("id, name, phone, photo_url, active")
     .single();
   if (error) throw new Error("Não foi possível criar o barbeiro.");
   return {
     id: data.id as string,
     name: data.name as string,
     phone: (data.phone as string) ?? "",
+    photoUrl: data.photo_url as string | null,
     active: data.active as boolean,
   };
 }
 
 export async function updateBarber(
   id: string,
-  patch: { name?: string; phone?: string; active?: boolean }
+  patch: { name?: string; phone?: string; photoUrl?: string | null; active?: boolean }
 ): Promise<Barber> {
   const dbPatch: Record<string, unknown> = {};
   if (patch.name !== undefined) dbPatch.name = patch.name.trim();
   if (patch.phone !== undefined) dbPatch.phone = patch.phone.trim() || null;
+  if (patch.photoUrl !== undefined) dbPatch.photo_url = patch.photoUrl;
   if (patch.active !== undefined) dbPatch.active = patch.active;
 
   const { data, error } = await supabaseAdmin()
     .from("barbers")
     .update(dbPatch)
     .eq("id", id)
-    .select("id, name, phone, active")
+    .select("id, name, phone, photo_url, active")
     .single();
   if (error) throw new Error("Não foi possível atualizar o barbeiro.");
   return {
     id: data.id as string,
     name: data.name as string,
     phone: (data.phone as string) ?? "",
+    photoUrl: data.photo_url as string | null,
     active: data.active as boolean,
   };
 }

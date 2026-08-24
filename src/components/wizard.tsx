@@ -247,9 +247,17 @@ export function Wizard() {
                     }}
                     className="flex w-full items-center gap-4 rounded-2xl border border-line bg-panel px-4 py-4 text-left transition hover:border-gold/60 hover:bg-panel-2"
                   >
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-panel-2 text-2xl">
-                      🧑‍💼
-                    </span>
+                    {b.photoUrl ? (
+                      <img
+                        src={b.photoUrl}
+                        alt={b.name}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-panel-2 text-2xl">
+                        🧑‍💼
+                      </span>
+                    )}
                     <div>
                       <p className="font-semibold text-cream">{b.name}</p>
                       <p className="text-xs text-muted">Especialista em cortes</p>
@@ -370,9 +378,16 @@ export function Wizard() {
                       {formatPrice(selectedService?.priceCents ?? 0)}
                     </span>
                   </li>
-                  <li className="flex justify-between py-2">
+                  <li className="flex items-center justify-between py-2">
                     <span className="text-muted">Barbeiro</span>
-                    <span className="font-semibold text-cream">
+                    <span className="flex items-center gap-2 font-semibold text-cream">
+                      {selectedBarber?.photoUrl ? (
+                        <img
+                          src={selectedBarber.photoUrl}
+                          alt={selectedBarber.name}
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      ) : null}
                       {selectedBarber?.name}
                     </span>
                   </li>

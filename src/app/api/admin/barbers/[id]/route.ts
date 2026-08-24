@@ -22,9 +22,10 @@ export async function PATCH(
     return Response.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  const { name, phone, active } = body as {
+  const { name, phone, photoUrl, active } = body as {
     name?: string;
     phone?: string;
+    photoUrl?: string | null;
     active?: boolean;
   };
   if (name !== undefined && name.trim().length < 2) {
@@ -35,6 +36,7 @@ export async function PATCH(
     const barber = await updateBarber(id, {
       name: name !== undefined ? name.trim() : undefined,
       phone: phone !== undefined ? phone.trim() : undefined,
+      photoUrl,
       active,
     });
     return Response.json({ barber });

@@ -24,6 +24,7 @@ create table if not exists public.barbers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   phone text,
+  photo_url text,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -145,6 +146,9 @@ grant select, insert, update, delete on all tables in schema public to service_r
 --   update public.services set position = sub.row_number - 1
 --   from (select id, row_number() over (order by created_at) from public.services) sub
 --   where public.services.id = sub.id;
+-- ------------------------------------------------------------
+-- Migração para a coluna de foto do barbeiro:
+--   alter table public.barbers add column if not exists photo_url text;
 -- ------------------------------------------------------------
 
 -- ------------------------------------------------------------
