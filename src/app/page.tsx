@@ -10,7 +10,7 @@ function ShopIcon({ icon }: { icon: string }) {
   const isUrl = icon.startsWith("http");
   if (isUrl) {
     return (
-      <div className="mx-auto mb-4 overflow-hidden rounded-2xl border border-gold/40 shadow-[0_0_40px_rgba(212,175,55,0.25)]">
+      <div className="mx-auto mb-4 inline-flex overflow-hidden rounded-2xl border border-gold/40 shadow-[0_0_40px_rgba(212,175,55,0.25)]">
         <Image
           src={icon}
           alt="Logo"
@@ -23,7 +23,7 @@ function ShopIcon({ icon }: { icon: string }) {
     );
   }
   return (
-    <div className="mx-auto mb-4 flex min-h-16 min-w-16 items-center justify-center rounded-2xl border border-gold/40 bg-panel px-4 py-3 text-3xl shadow-[0_0_40px_rgba(212,175,55,0.25)]">
+    <div className="mx-auto mb-4 inline-flex items-center justify-center rounded-2xl border border-gold/40 bg-panel px-4 py-3 text-3xl shadow-[0_0_40px_rgba(212,175,55,0.25)]">
       {icon}
     </div>
   );

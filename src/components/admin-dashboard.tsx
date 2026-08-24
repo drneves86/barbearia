@@ -1084,7 +1084,64 @@ function SettingsTab() {
         </p>
         <div className="space-y-3">
           <Field label="Nome da barbearia" value={name} onChange={setName} />
-          <Field label="Ícone acima do nome" value={icon} onChange={setIcon} />
+          <div>
+            <Field label="Ícone acima do nome" value={icon} onChange={setIcon} />
+            <p className="mt-1 text-xs text-muted/60">
+              Cole a URL de uma imagem ou use um emoji. Para usar imagem, faça upload abaixo.
+            </p>
+            <div className="mt-2 flex items-center gap-3">
+              {icon ? (
+                icon.startsWith("http") ? (
+                  <img src={icon} alt="Logo" className="h-12 w-12 rounded-lg object-cover" />
+                ) : (
+                  <span className="text-3xl">{icon}</span>
+                )
+              ) : null}
+              <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
+                📷 Enviar logo
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError("Arquivo muito grande. Máximo 5MB.");
+                      return;
+                    }
+                    setSavingIdentity(true);
+                    setError(null);
+                    try {
+                      const formData = new FormData();
+                      formData.append("file", file);
+                      formData.append("serviceId", "barbershop-icon");
+                      const res = await fetch("/api/admin/upload", {
+                        method: "POST",
+                        body: formData,
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error);
+                      setIcon(data.url);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+                    } finally {
+                      setSavingIdentity(false);
+                    }
+                  }}
+                />
+              </label>
+              {icon && icon.startsWith("http") ? (
+                <button
+                  type="button"
+                  onClick={() => setIcon("💈")}
+                  className="text-xs text-red-400 transition hover:text-red-300"
+                >
+                  🗑️ Remover logo
+                </button>
+              ) : null}
+            </div>
+          </div>
           <Field
             label="Link do Google Maps (endereço)"
             value={location}
