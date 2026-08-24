@@ -32,6 +32,10 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
     return "appointments";
   });
 
+  const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+
   useEffect(() => {
     localStorage.setItem("admin-tab", tab);
   }, [tab]);
@@ -711,13 +715,51 @@ function BarbersTab() {
                   </button>
                 ) : null}
               </div>
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <EditableName value={b.name} onSave={(name) => save(b, { name })} />
-                <EditablePhone
-                  value={b.phone}
-                  onSave={(phone) => save(b, { phone })}
-                />
-              </div>
+              {editingBarberId === b.id ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={b.name}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Nome do barbeiro"
+                    className="h-10 rounded-xl border border-line bg-panel px-3 text-cream outline-none transition placeholder:text-muted/50 focus:border-gold/60 focus:ring-2 focus:ring-gold/20"
+                  />
+                  <Input
+                    value={b.phone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    placeholder="(12) 99600-0000"
+                    inputMode="tel"
+                    className="h-10 rounded-xl border border-line bg-panel px-3 text-cream outline-none transition placeholder:text-muted/50 focus:border-gold/60 focus:ring-2 focus:ring-gold/20"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => save(b, { name: newName, phone: newPhone })}
+                      className="rounded-lg border border-gold/40 px-3 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/10"
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingBarberId(null)}
+                      className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-gold/50 hover:text-gold"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted">{b.name || "—"}</span>
+                  <span className="text-sm text-muted">{b.phone || "Sem WhatsApp cadastrado"}</span>
+                  <button
+                    type="button"
+                    onClick={() => setEditingBarberId(b.id)}
+                    className="rounded-md border border-line px-2 py-1 text-xs text-muted transition hover:text-gold"
+                  >
+                    Editar
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
