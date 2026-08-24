@@ -121,9 +121,10 @@ function AppointmentsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "calendar">(() => {
-    if (typeof window === "undefined") return "list";
+    if (typeof window === "undefined") return "calendar";
     const saved = window.localStorage.getItem("admin-appointments-view");
-    return saved === "calendar" ? "calendar" : "list";
+    if (saved === "list" || saved === "calendar") return saved;
+    return "calendar";
   });
   const [calendarDay, setCalendarDay] = useState<string | null>(null);
 
