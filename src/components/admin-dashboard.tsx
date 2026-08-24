@@ -841,7 +841,10 @@ function ServicesTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold">
+                    <label className="flex items-center gap-1.5 cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
+                      {s.imageUrl ? (
+                        <img src={s.imageUrl} alt="" className="h-5 w-5 rounded object-cover" />
+                      ) : null}
                       📷 Foto
                       <input
                         type="file"
@@ -870,6 +873,15 @@ function ServicesTab() {
                         }}
                       />
                     </label>
+                    {s.imageUrl ? (
+                      <button
+                        type="button"
+                        onClick={() => save(s, { imageUrl: null })}
+                        className="rounded-lg border border-crimson/40 px-2 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-crimson/10"
+                      >
+                        🗑️
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => setEditingId(s.id)}
