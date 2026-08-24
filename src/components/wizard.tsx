@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, ErrorBox, Spinner } from "@/components/ui";
 import { Calendar } from "@/components/calendar";
@@ -11,7 +10,6 @@ import { isDateSelectable } from "@/lib/slots";
 import { todayInTZ } from "@/lib/date";
 import { appointmentSchema, firstErrorMessage } from "@/lib/validations";
 import { formatPrice } from "@/lib/config";
-import { createClient } from "@supabase/supabase-js";
 import type { Barber, Service, Slot } from "@/lib/types";
 
 const USER_KEY = "barbearia-user";
@@ -41,54 +39,23 @@ type Result = {
 };
 
 export function Wizard() {
-  const router = useRouter();
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY!
-  );
-
   const [services, setServices] = useState<Service[]>([]);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
 
   const [step, setStep] = useState(0);
 
-  // Subscrição em tempo real do Supabase
-  // Atualiza instantaneamente quando o admin salva serviços/barbeiros
   useEffect(() => {
-    const servicesChannel = supabase.channel("services_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "services" },
-        (payload) => {
-          fetch("/api/catalog")
-            .then((r) => r.json())
-            .then((data) => {
-              if (data.services) setServices(data.services);
-            });
-        }
-      )
-      .subscribe();
-
-    const barbersChannel = supabase.channel("barbers_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "barbers" },
-        (payload) => {
-          fetch("/api/catalog")
-            .then((r) => r.json())
-            .then((data) => {
-              if (data.barbers) setBarbers(data.barbers);
-            });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(servicesChannel);
-      supabase.removeChannel(barbersChannel);
-    };
-  }, [supabase]);
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/catalog", { cache: "no-store" });
+        const data = await res.json();
+        if (data.services) setServices(data.services);
+        if (data.barbers) setBarbers(data.barbers);
+      } catch {}
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [barberId, setBarberId] = useState<string | null>(null);
