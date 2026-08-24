@@ -311,25 +311,47 @@ export function Wizard() {
                 Escolha o horário
               </h2>
               <div className="rounded-2xl border border-line bg-panel p-4">
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-                  <span className="text-muted">
-                    Serviço:{" "}
-                    <span className="text-cream">{selectedService?.name}</span>
-                  </span>
-                  <span className="text-muted">
-                    Barbeiro:{" "}
-                    <span className="text-cream">{selectedBarber?.name}</span>
-                  </span>
-                  <span className="text-muted">
-                    Data:{" "}
-                    <span className="text-cream">
-                      {date ? formatDateBR(date) : "—"}
+                <div className="flex items-center gap-4">
+                  {selectedService?.imageUrl ? (
+                    <img
+                      src={selectedService.imageUrl}
+                      alt={selectedService.name}
+                      className="h-14 w-14 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-panel-2 text-3xl">
+                      {selectedService?.emoji}
                     </span>
-                  </span>
-                  <span className="text-muted">
-                    Horário:{" "}
-                    <span className="font-bold text-gold">{time ?? "—"}</span>
-                  </span>
+                  )}
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                    <span className="text-muted">
+                      Serviço:{" "}
+                      <span className="text-cream">{selectedService?.name}</span>
+                    </span>
+                    <span className="text-muted">
+                      Barbeiro:{" "}
+                      <span className="flex items-center gap-2 text-cream">
+                        {selectedBarber?.photoUrl && (
+                          <img
+                            src={selectedBarber.photoUrl}
+                            alt={selectedBarber.name}
+                            className="h-6 w-6 rounded-full object-cover"
+                          />
+                        )}
+                        {selectedBarber?.name}
+                      </span>
+                    </span>
+                    <span className="text-muted">
+                      Data:{" "}
+                      <span className="text-cream">
+                        {date ? formatDateBR(date) : "—"}
+                      </span>
+                    </span>
+                    <span className="text-muted">
+                      Horário:{" "}
+                      <span className="font-bold text-gold">{time ?? "—"}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -378,13 +400,20 @@ export function Wizard() {
               </h2>
 
               <div className="rounded-2xl border border-gold/30 bg-panel p-4">
+                <div className="flex items-center gap-3 border-b border-line py-3">
+                  <span className="text-muted">Serviço</span>
+                  <span className="ml-auto flex items-center gap-2 font-semibold text-cream">
+                    {selectedService?.imageUrl ? (
+                      <img
+                        src={selectedService.imageUrl}
+                        alt={selectedService.name}
+                        className="h-10 w-10 rounded-lg object-cover"
+                      />
+                    ) : null}
+                    {selectedService?.name}
+                  </span>
+                </div>
                 <ul className="divide-y divide-line text-sm">
-                  <li className="flex justify-between py-2">
-                    <span className="text-muted">Serviço</span>
-                    <span className="font-semibold text-cream">
-                      {selectedService?.emoji} {selectedService?.name}
-                    </span>
-                  </li>
                   <li className="flex justify-between py-2">
                     <span className="text-muted">Valor</span>
                     <span className="font-semibold text-gold">
