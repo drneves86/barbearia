@@ -23,36 +23,31 @@ export function confirmationMessage(opts: {
   location: string;
   cancelUrl: string;
 }): string {
-  const sep = "__________";
+  const sep = "────────────";
   const lines = [
-    `💈 ${opts.barbershop} 💈`,
+    `Olá, ${opts.barberName}!`,
     "",
-    "CONFIRMAÇÃO DE AGENDAMENTO",
+    `Novo agendamento em ${opts.barbershop}`,
     "",
-    `👥 Olá, ${opts.barberName}!`,
     sep,
-    "Detalhes do agendamento:",
-    `💇🏻‍♂️ CLIENTE: ${opts.clientName}`,
-    `✂️ PROFISSIONAL: ${opts.barberName}`,
-    `💼 SERVIÇO: ${opts.serviceName}`,
-    `💵 VALOR: ${opts.price}`,
-    `📌 DIA: ${formatDateBR(opts.date)}`,
-    `🕜 HORÁRIO: ${opts.time}`,
+    `Cliente: ${opts.clientName}`,
+    `Profissional: ${opts.barberName}`,
+    `Serviço: ${opts.serviceName}`,
+    `Valor: ${opts.price}`,
+    `Data: ${formatDateBR(opts.date)}`,
+    `Horário: ${opts.time}`,
   ];
   if (opts.address) {
-    lines.push(`📍 LOCAL: ${opts.address}`);
+    lines.push(`Local: ${opts.address}`);
   }
   if (opts.location) {
-    lines.push(`🗺️ Abrir no Google Maps: ${opts.location}`);
+    lines.push(`Mapa: ${opts.location}`);
   }
   lines.push(
     sep,
-    "✅ Seu horário já foi confirmado automaticamente.",
+    "Horário confirmado automaticamente.",
     sep,
-    "❌ Cancelar horário:",
-    opts.cancelUrl,
-    sep,
-    "⏰ O cancelamento pode ser feito até 30 minuto(s) antes do horário agendado.",
+    `Cancelar: ${opts.cancelUrl}`,
     sep
   );
   return lines.join("\n");
@@ -66,13 +61,13 @@ export function cancellationMessage(opts: {
   time: string;
 }): string {
   return [
-    "Olá! 👋",
+    `Olá!`,
     "",
     `Um horário na ${opts.barbershop} foi cancelado.`,
     "",
-    `🧔 Cliente: ${opts.clientName}`,
-    `📅 Data: ${formatDateBR(opts.date)}`,
-    `⏰ Horário: ${opts.time}`,
+    `Cliente: ${opts.clientName}`,
+    `Data: ${formatDateBR(opts.date)}`,
+    `Horário: ${opts.time}`,
     "",
     "Até a próxima!",
   ].join("\n");
