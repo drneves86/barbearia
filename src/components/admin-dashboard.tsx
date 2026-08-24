@@ -730,7 +730,7 @@ function BarbersTab() {
                     />
                     <button
                       type="button"
-                      onClick={() => save(b, { name: newName, phone: newPhone })}
+                      onClick={() => { save(b, { name: newName, phone: newPhone }); setEditingBarberId(null); }}
                       className="shrink-0 rounded-lg bg-gold/20 px-2.5 py-1 text-xs font-semibold text-gold transition hover:bg-gold/30"
                     >
                       Salvar
