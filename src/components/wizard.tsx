@@ -208,7 +208,15 @@ export function Wizard() {
                     }}
                     className="flex flex-col items-start gap-2 rounded-2xl border border-line bg-panel p-4 text-left transition hover:border-gold/60 hover:bg-panel-2"
                   >
-                    <span className="text-3xl">{s.emoji}</span>
+                    {s.imageUrl ? (
+                      <img
+                        src={s.imageUrl}
+                        alt={s.name}
+                        className="h-16 w-16 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl">{s.emoji}</span>
+                    )}
                     <span className="font-semibold leading-tight text-cream">
                       {s.name}
                     </span>

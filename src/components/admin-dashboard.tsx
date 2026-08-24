@@ -738,7 +738,7 @@ function ServicesTab() {
 
   async function save(
     s: Service,
-    patch: { name?: string; price?: number; emoji?: string; active?: boolean }
+    patch: { name?: string; price?: number; emoji?: string; imageUrl?: string | null; active?: boolean }
   ) {
     try {
       await api(`/api/admin/services/${s.id}`, {
@@ -812,7 +812,15 @@ function ServicesTab() {
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{s.emoji}</span>
+                    {s.imageUrl ? (
+                      <img
+                        src={s.imageUrl}
+                        alt={s.name}
+                        className="h-12 w-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl">{s.emoji}</span>
+                    )}
                     <div>
                       <p className="font-semibold text-cream">{s.name}</p>
                       <p className="text-sm font-bold text-gold">
@@ -821,6 +829,35 @@ function ServicesTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold">
+                      📷 Foto
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setBusy(true);
+                          try {
+                            const formData = new FormData();
+                            formData.append("file", file);
+                            formData.append("serviceId", s.id);
+                            const res = await fetch("/api/admin/upload", {
+                              method: "POST",
+                              body: formData,
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error);
+                            await save(s, { imageUrl: data.url });
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+                          } finally {
+                            setBusy(false);
+                          }
+                        }}
+                      />
+                    </label>
                     <button
                       type="button"
                       onClick={() => setEditingId(s.id)}
@@ -1235,15 +1272,38 @@ function EditableService({
   onCancel,
 }: {
   service: Service;
-  onSave: (patch: { name?: string; price?: number; emoji?: string }) => void;
+  onSave: (patch: { name?: string; price?: number; emoji?: string; imageUrl?: string | null }) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState(service.name);
   const [price, setPrice] = useState((service.priceCents / 100).toFixed(2).replace(".", ","));
   const [emoji, setEmoji] = useState(service.emoji);
+  const [uploading, setUploading] = useState(false);
 
   const priceCents = Math.round(parseFloat(price.replace(",", ".")) * 100);
   const valid = name.trim().length >= 2 && !Number.isNaN(priceCents) && priceCents >= 0;
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("serviceId", service.id);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      onSave({ imageUrl: data.url });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erro ao enviar imagem.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <div className="space-y-2">
@@ -1283,6 +1343,34 @@ function EditableService({
             ✕
           </button>
         </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {service.imageUrl ? (
+          <img
+            src={service.imageUrl}
+            alt={service.name}
+            className="h-16 w-16 rounded-lg object-cover"
+          />
+        ) : null}
+        <label className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted transition hover:text-gold">
+          {uploading ? "Enviando..." : service.imageUrl ? "📷 Trocar foto" : "📷 Enviar foto"}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={handleImageUpload}
+            disabled={uploading}
+          />
+        </label>
+        {service.imageUrl ? (
+          <button
+            type="button"
+            onClick={() => onSave({ imageUrl: null })}
+            className="text-xs text-red-400 transition hover:text-red-300"
+          >
+            Remover foto
+          </button>
+        ) : null}
       </div>
     </div>
   );

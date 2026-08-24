@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  const { name, price, emoji } = body as { name?: string; price?: number; emoji?: string };
+  const { name, price, emoji, imageUrl } = body as { name?: string; price?: number; emoji?: string; imageUrl?: string };
   const priceCents = Math.round(Number(price ?? NaN));
   if (!name || name.trim().length < 2 || Number.isNaN(priceCents) || priceCents < 0) {
     return Response.json(
@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       name: name.trim(),
       priceCents,
       emoji: emoji || "💈",
+      imageUrl: imageUrl || undefined,
     });
     return Response.json({ service }, { status: 201 });
   } catch (e) {

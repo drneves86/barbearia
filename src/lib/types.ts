@@ -3,6 +3,7 @@ export type Service = {
   name: string;
   priceCents: number;
   emoji: string;
+  imageUrl: string | null;
   active: boolean;
 };
 

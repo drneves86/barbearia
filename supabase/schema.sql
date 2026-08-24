@@ -36,6 +36,7 @@ create table if not exists public.services (
   name text not null,
   price_cents integer not null default 0,
   emoji text not null default '💈',
+  image_url text,
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -134,6 +135,9 @@ grant select, insert, update, delete on all tables in schema public to service_r
 -- ------------------------------------------------------------
 -- Migração para a coluna de telefone do barbeiro (para o WhatsApp):
 --   alter table public.barbers add column if not exists phone text;
+-- ------------------------------------------------------------
+-- Migração para a coluna de imagem do serviço:
+--   alter table public.services add column if not exists image_url text;
 -- ------------------------------------------------------------
 
 -- ------------------------------------------------------------

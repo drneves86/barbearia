@@ -22,10 +22,11 @@ export async function PATCH(
     return Response.json({ error: "Requisição inválida." }, { status: 400 });
   }
 
-  const { name, price, emoji, active } = body as {
+  const { name, price, emoji, imageUrl, active } = body as {
     name?: string;
     price?: number;
     emoji?: string;
+    imageUrl?: string | null;
     active?: boolean;
   };
 
@@ -41,6 +42,7 @@ export async function PATCH(
       name: name !== undefined ? name.trim() : undefined,
       priceCents: price !== undefined ? Math.round(Number(price)) : undefined,
       emoji,
+      imageUrl,
       active,
     });
     return Response.json({ service });

@@ -1,12 +1,36 @@
 import Link from "next/link";
+import Image from "next/image";
 import { RegistrationForm } from "@/components/registration-form";
 import { formatPrice } from "@/lib/config";
 import { listServices, getSettings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+function ShopIcon({ icon }: { icon: string }) {
+  const isUrl = icon.startsWith("http");
+  if (isUrl) {
+    return (
+      <div className="mx-auto mb-4 overflow-hidden rounded-2xl border border-gold/40 shadow-[0_0_40px_rgba(212,175,55,0.25)]">
+        <Image
+          src={icon}
+          alt="Logo"
+          width={128}
+          height={128}
+          className="h-auto w-auto max-h-24 max-w-24 object-contain bg-panel"
+          unoptimized
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="mx-auto mb-4 flex min-h-16 min-w-16 items-center justify-center rounded-2xl border border-gold/40 bg-panel px-4 py-3 text-3xl shadow-[0_0_40px_rgba(212,175,55,0.25)]">
+      {icon}
+    </div>
+  );
+}
+
 export default async function Home() {
-  let services: { name: string; priceCents: number; emoji: string }[] = [];
+  let services: { name: string; priceCents: number; emoji: string; imageUrl: string | null }[] = [];
   try {
     services = await listServices(true);
   } catch {
@@ -26,9 +50,7 @@ export default async function Home() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-8 sm:max-w-lg">
       <header className="pt-6 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-gold/40 bg-panel text-3xl shadow-[0_0_40px_rgba(212,175,55,0.25)]">
-          {shopIcon}
-        </div>
+        <ShopIcon icon={shopIcon} />
         <h1 className="text-3xl font-extrabold tracking-tight text-cream">
           {shopName}
         </h1>
@@ -54,12 +76,21 @@ export default async function Home() {
             {services.map((s) => (
               <li
                 key={s.name}
-                className="flex items-center justify-between py-2.5"
+                className="flex items-center gap-3 py-2.5"
               >
-                <span className="flex items-center gap-2 text-cream">
+                {s.imageUrl ? (
+                  <Image
+                    src={s.imageUrl}
+                    alt={s.name}
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 rounded-lg object-cover"
+                    unoptimized
+                  />
+                ) : (
                   <span className="text-lg">{s.emoji}</span>
-                  {s.name}
-                </span>
+                )}
+                <span className="flex-1 text-cream">{s.name}</span>
                 <span className="font-semibold text-gold">
                   {formatPrice(s.priceCents)}
                 </span>

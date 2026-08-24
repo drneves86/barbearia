@@ -19,16 +19,17 @@ function normalizeTime(value: string): string {
 export async function listServices(activeOnly = true): Promise<Service[]> {
   let q = supabaseAdmin()
     .from("services")
-    .select("id, name, price_cents, emoji, active")
+    .select("id, name, price_cents, emoji, image_url, active")
     .order("price_cents", { ascending: true });
   if (activeOnly) q = q.eq("active", true);
   const { data } = await q;
-  return ((data ?? []) as { id: string; name: string; price_cents: number; emoji: string; active: boolean }[]).map(
+  return ((data ?? []) as { id: string; name: string; price_cents: number; emoji: string; image_url: string | null; active: boolean }[]).map(
     (r) => ({
       id: r.id,
       name: r.name,
       priceCents: r.price_cents,
       emoji: r.emoji,
+      imageUrl: r.image_url,
       active: r.active,
     })
   );
@@ -455,6 +456,7 @@ export async function createService(input: {
   name: string;
   priceCents: number;
   emoji: string;
+  imageUrl?: string;
 }): Promise<Service> {
   const { data, error } = await supabaseAdmin()
     .from("services")
@@ -462,8 +464,9 @@ export async function createService(input: {
       name: input.name.trim(),
       price_cents: input.priceCents,
       emoji: input.emoji || "💈",
+      image_url: input.imageUrl || null,
     })
-    .select("id, name, price_cents, emoji, active")
+    .select("id, name, price_cents, emoji, image_url, active")
     .single();
   if (error) throw new Error("Não foi possível criar o serviço.");
   return {
@@ -471,25 +474,27 @@ export async function createService(input: {
     name: data.name as string,
     priceCents: data.price_cents as number,
     emoji: data.emoji as string,
+    imageUrl: data.image_url as string | null,
     active: data.active as boolean,
   };
 }
 
 export async function updateService(
   id: string,
-  patch: { name?: string; priceCents?: number; emoji?: string; active?: boolean }
+  patch: { name?: string; priceCents?: number; emoji?: string; imageUrl?: string | null; active?: boolean }
 ): Promise<Service> {
   const dbPatch: Record<string, unknown> = {};
   if (patch.name !== undefined) dbPatch.name = patch.name.trim();
   if (patch.priceCents !== undefined) dbPatch.price_cents = patch.priceCents;
   if (patch.emoji !== undefined) dbPatch.emoji = patch.emoji;
+  if (patch.imageUrl !== undefined) dbPatch.image_url = patch.imageUrl;
   if (patch.active !== undefined) dbPatch.active = patch.active;
 
   const { data, error } = await supabaseAdmin()
     .from("services")
     .update(dbPatch)
     .eq("id", id)
-    .select("id, name, price_cents, emoji, active")
+    .select("id, name, price_cents, emoji, image_url, active")
     .single();
   if (error) throw new Error("Não foi possível atualizar o serviço.");
   return {
@@ -497,6 +502,7 @@ export async function updateService(
     name: data.name as string,
     priceCents: data.price_cents as number,
     emoji: data.emoji as string,
+    imageUrl: data.image_url as string | null,
     active: data.active as boolean,
   };
 }

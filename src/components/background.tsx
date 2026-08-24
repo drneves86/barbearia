@@ -7,7 +7,7 @@ export function Background() {
         className="fixed inset-0 -z-10 bg-cover bg-center opacity-[0.09]"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=1200&auto=format&fit=crop')",
+            "url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=1200&auto=format&fit=crop')",
         }}
       />
       <div
@@ -15,7 +15,7 @@ export function Background() {
         className="fixed inset-0 -z-10 bg-cover bg-center opacity-[0.07]"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1200&auto=format&fit=crop')",
+            "url('https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=1200&auto=format&fit=crop')",
         }}
       />
       <div
