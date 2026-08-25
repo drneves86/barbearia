@@ -553,10 +553,13 @@ function BarbersTab() {
   const [items, setItems] = useState<Barber[]>([]);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -710,56 +713,20 @@ function BarbersTab() {
                   >
                     🗑️
                   </button>
-) : null}
+                ) : null}
               </div>
               <div className="min-w-0 flex-1 space-y-0.5">
-                {editingBarberId === b.id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      placeholder="Nome"
-                      className="h-9 w-full rounded-lg border border-line bg-panel px-3 text-sm text-cream outline-none transition focus:border-gold/60 focus:ring-1 focus:ring-gold/20"
-                    />
-                    <input
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(e.target.value)}
-                      placeholder="(12) 99600-0000"
-                      inputMode="tel"
-                      className="h-9 w-full rounded-lg border border-line bg-panel px-3 text-sm text-cream outline-none transition focus:border-gold/60 focus:ring-1 focus:ring-gold/20"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { save(b, { name: newName, phone: newPhone }); setEditingBarberId(null); }}
-                      className="shrink-0 rounded-lg bg-gold/20 px-2.5 py-1 text-xs font-semibold text-gold transition hover:bg-gold/30"
-                    >
-                      Salvar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingBarberId(null)}
-                      className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-xs text-muted transition hover:text-cream"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <p className="font-semibold text-cream">{b.name}</p>
-                    <p className="text-sm text-muted">{b.phone || "Sem WhatsApp cadastrado"}</p>
-                  </>
-                )}
+                <p className="font-semibold text-cream">{b.name}</p>
+                <p className="text-sm text-muted">{b.phone || "Sem WhatsApp cadastrado"}</p>
               </div>
               <div className="flex items-center gap-1.5">
-                {editingBarberId !== b.id && (
-                  <button
-                    type="button"
-                    onClick={() => { setEditingBarberId(b.id); setNewName(b.name); setNewPhone(b.phone); }}
-                    className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted transition hover:border-gold/50 hover:text-gold"
-                  >
-                    Editar
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => { setEditingBarber(b); setEditName(b.name); setEditPhone(b.phone); }}
+                  className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted transition hover:border-gold/50 hover:text-gold"
+                >
+                  Editar
+                </button>
                 <button
                   type="button"
                   onClick={() => save(b, { active: !b.active })}
@@ -781,6 +748,41 @@ function BarbersTab() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {editingBarber && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-line bg-panel p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-cream">Editar barbeiro</h3>
+            <div className="space-y-3">
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Nome"
+              />
+              <Input
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="WhatsApp"
+                inputMode="tel"
+              />
+            </div>
+            <div className="mt-6 flex gap-2">
+              <Button
+                onClick={async () => {
+                  await save(editingBarber, { name: editName, phone: editPhone });
+                  setEditingBarber(null);
+                }}
+                disabled={busy || editName.trim().length < 2}
+              >
+                Salvar
+              </Button>
+              <Button variant="secondary" onClick={() => setEditingBarber(null)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
