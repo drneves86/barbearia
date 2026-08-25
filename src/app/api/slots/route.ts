@@ -23,6 +23,11 @@ export async function GET(request: NextRequest) {
       getBarberDaySchedule(barberId, date),
       getSettings().catch(() => ({} as Record<string, string>)),
     ]);
+
+    if (schedule && !schedule.available && !schedule.startTime) {
+      return Response.json({ slots: [] });
+    }
+
     const defaultOpen = settings.working_hours_start || "08:00";
     const defaultClose = settings.working_hours_end || "18:00";
     return Response.json({ slots: availableSlotsFor(date, booked, schedule, defaultOpen, defaultClose) });

@@ -98,28 +98,37 @@ export function Wizard() {
       .finally(() => setLoadingCatalog(false));
   }, []);
 
+  const fetchBlockedDates = useCallback(async (bid: string) => {
+    if (!bid) {
+      setBlockedDates(new Set());
+      return;
+    }
+    try {
+      const now = new Date();
+      const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const horizon = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+      const to = `${horizon.getFullYear()}-${String(horizon.getMonth() + 1).padStart(2, "0")}-${String(horizon.getDate()).padStart(2, "0")}`;
+      const res = await fetch(`/api/schedule?barberId=${encodeURIComponent(bid)}&from=${from}&to=${to}`);
+      const data = await res.json();
+      const blocked = new Set<string>();
+      for (const entry of data.schedule ?? []) {
+        if (!entry.available) {
+          blocked.add(entry.date);
+        }
+      }
+      setBlockedDates(blocked);
+    } catch {
+      setBlockedDates(new Set());
+    }
+  }, []);
+
   useEffect(() => {
     if (!barberId) {
       setBlockedDates(new Set());
       return;
     }
-    const now = new Date();
-    const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-    const to = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-${String(nextMonth.getDate()).padStart(2, "0")}`;
-    fetch(`/api/schedule?barberId=${encodeURIComponent(barberId)}&from=${from}&to=${to}`)
-      .then((r) => r.json())
-      .then((data) => {
-        const blocked = new Set<string>();
-        for (const entry of data.schedule ?? []) {
-          if (!entry.available) {
-            blocked.add(entry.date);
-          }
-        }
-        setBlockedDates(blocked);
-      })
-      .catch(() => setBlockedDates(new Set()));
-  }, [barberId]);
+    fetchBlockedDates(barberId);
+  }, [barberId, fetchBlockedDates]);
 
   const loadSlots = useCallback(async (barber: string, day: string) => {
     setLoadingSlots(true);
@@ -325,6 +334,9 @@ export function Wizard() {
                 isSelectable={isDateSelectable}
                 onSelect={(d) => goToTime(d)}
                 blockedDates={blockedDates}
+                onMonthChange={() => {
+                  if (barberId) fetchBlockedDates(barberId);
+                }}
               />
               <Button variant="ghost" onClick={() => setStep(1)}>
                 ← Voltar
