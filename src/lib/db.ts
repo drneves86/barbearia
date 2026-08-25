@@ -469,7 +469,7 @@ export async function getBarberSchedule(
 ): Promise<BarberSchedule[]> {
   const { data } = await supabaseAdmin()
     .from("barber_schedules")
-    .select("id, barber_id, date, available, start_time, end_time")
+    .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
     .eq("barber_id", barberId)
     .gte("date", startDate)
     .lte("date", endDate)
@@ -482,6 +482,7 @@ export async function getBarberSchedule(
     available: boolean;
     start_time: string | null;
     end_time: string | null;
+    blocked_slots: string | null;
   }[]).map((r) => ({
     id: r.id,
     barberId: r.barber_id,
@@ -489,6 +490,7 @@ export async function getBarberSchedule(
     available: r.available,
     startTime: r.start_time ? r.start_time.slice(0, 5) : null,
     endTime: r.end_time ? r.end_time.slice(0, 5) : null,
+    blockedSlots: r.blocked_slots ? r.blocked_slots.split(",").filter(Boolean) : [],
   }));
 }
 
@@ -498,6 +500,7 @@ export async function setBarberSchedule(input: {
   available: boolean;
   startTime?: string | null;
   endTime?: string | null;
+  blockedSlots?: string[];
 }): Promise<BarberSchedule> {
   const { data, error } = await supabaseAdmin()
     .from("barber_schedules")
@@ -508,10 +511,11 @@ export async function setBarberSchedule(input: {
         available: input.available,
         start_time: input.startTime ?? null,
         end_time: input.endTime ?? null,
+        blocked_slots: input.blockedSlots?.length ? input.blockedSlots.join(",") : null,
       },
       { onConflict: "barber_id,date" }
     )
-    .select("id, barber_id, date, available, start_time, end_time")
+    .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
     .single();
 
   if (error) throw new Error("Não foi possível salvar a agenda.");
@@ -522,6 +526,7 @@ export async function setBarberSchedule(input: {
     available: data.available as boolean,
     startTime: data.start_time ? (data.start_time as string).slice(0, 5) : null,
     endTime: data.end_time ? (data.end_time as string).slice(0, 5) : null,
+    blockedSlots: data.blocked_slots ? (data.blocked_slots as string).split(",").filter(Boolean) : [],
   };
 }
 
@@ -531,7 +536,7 @@ export async function getBarberDaySchedule(
 ): Promise<BarberSchedule | null> {
   const { data } = await supabaseAdmin()
     .from("barber_schedules")
-    .select("id, barber_id, date, available, start_time, end_time")
+    .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
     .eq("barber_id", barberId)
     .eq("date", date)
     .maybeSingle();
@@ -544,6 +549,7 @@ export async function getBarberDaySchedule(
     available: data.available as boolean,
     startTime: data.start_time ? (data.start_time as string).slice(0, 5) : null,
     endTime: data.end_time ? (data.end_time as string).slice(0, 5) : null,
+    blockedSlots: data.blocked_slots ? (data.blocked_slots as string).split(",").filter(Boolean) : [],
   };
 }
 

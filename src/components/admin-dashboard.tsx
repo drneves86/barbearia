@@ -7,6 +7,7 @@ import { Button, ErrorBox, Input, Spinner } from "@/components/ui";
 import { buildWaLink, formatDateBR } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/config";
 import { todayInTZ } from "@/lib/date";
+import { generateAllSlots } from "@/lib/slots";
 import type { AppointmentWithDetails, Barber, BarberSchedule, Service } from "@/lib/types";
 
 type Tab = "appointments" | "barbers" | "services" | "settings";
@@ -817,6 +818,7 @@ function BarberScheduleModal({
   const [saving, setSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [blockMode, setBlockMode] = useState<"total" | "partial">("total");
+  const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
 
   const monthStr = String(month + 1).padStart(2, "0");
   const from = `${year}-${monthStr}-01`;
@@ -850,14 +852,15 @@ function BarberScheduleModal({
     date: string,
     available: boolean,
     startTime: string | null,
-    endTime: string | null
+    endTime: string | null,
+    blocked: string[] = []
   ) {
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/barbers/${barber.id}/schedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, available, startTime, endTime }),
+        body: JSON.stringify({ date, available, startTime, endTime, blockedSlots: blocked }),
       });
       const data = await res.json();
       if (data.schedule) {
@@ -878,11 +881,19 @@ function BarberScheduleModal({
       setSelectedDate(date);
       const existing = schedule[date];
       if (existing) {
-        setBlockMode(
-          existing.startTime && existing.endTime ? "partial" : "total"
-        );
+        if (existing.blockedSlots?.length) {
+          setBlockMode("partial");
+          setBlockedSlots(new Set(existing.blockedSlots));
+        } else if (existing.startTime && existing.endTime) {
+          setBlockMode("partial");
+          setBlockedSlots(new Set());
+        } else {
+          setBlockMode("total");
+          setBlockedSlots(new Set());
+        }
       } else {
         setBlockMode("total");
+        setBlockedSlots(new Set());
       }
     }
   }
@@ -890,17 +901,10 @@ function BarberScheduleModal({
   async function applyBlock() {
     if (!selectedDate) return;
     if (blockMode === "total") {
-      await saveSchedule(selectedDate, false, null, null);
+      await saveSchedule(selectedDate, false, null, null, []);
     } else {
-      const startEl = document.getElementById(
-        `block-start-${selectedDate}`
-      ) as HTMLInputElement | null;
-      const endEl = document.getElementById(
-        `block-end-${selectedDate}`
-      ) as HTMLInputElement | null;
-      const startTime = startEl?.value || "08:00";
-      const endTime = endEl?.value || "18:00";
-      await saveSchedule(selectedDate, false, startTime, endTime);
+      const slots = Array.from(blockedSlots).sort();
+      await saveSchedule(selectedDate, false, null, null, slots);
     }
     setSelectedDate(null);
   }
@@ -995,9 +999,9 @@ function BarberScheduleModal({
               if (!date) return <div key={`empty-${i}`} />;
               const entry = schedule[date];
               const isPast = date < today;
-              const isTotalOff = entry && !entry.available && !entry.startTime;
+              const isTotalOff = entry && !entry.available && !entry.startTime && (!entry.blockedSlots || entry.blockedSlots.length === 0);
               const isPartialOff =
-                entry && !entry.available && entry.startTime && entry.endTime;
+                entry && !entry.available && (entry.blockedSlots?.length || (entry.startTime && entry.endTime));
 
               return (
                 <button
@@ -1042,9 +1046,11 @@ function BarberScheduleModal({
 
             {selected && !selected.available && (
               <p className="text-xs text-muted">
-                {selected.startTime
-                  ? `Bloqueado das ${selected.startTime} às ${selected.endTime}`
-                  : "Bloqueado o dia todo"}
+                {selected.blockedSlots?.length
+                  ? `${selected.blockedSlots.length} horário(s) bloqueado(s)`
+                  : selected.startTime
+                    ? `Bloqueado das ${selected.startTime} às ${selected.endTime}`
+                    : "Bloqueado o dia todo"}
               </p>
             )}
 
@@ -1074,24 +1080,33 @@ function BarberScheduleModal({
             </div>
 
             {blockMode === "partial" && (
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-muted">Bloquear a partir de</label>
-                  <input
-                    type="time"
-                    defaultValue={selected?.startTime ?? "08:00"}
-                    id={`block-start-${selectedDate}`}
-                    className="h-9 w-full rounded-lg border border-line bg-panel px-2 text-xs text-cream"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs text-muted">Até</label>
-                  <input
-                    type="time"
-                    defaultValue={selected?.endTime ?? "18:00"}
-                    id={`block-end-${selectedDate}`}
-                    className="h-9 w-full rounded-lg border border-line bg-panel px-2 text-xs text-cream"
-                  />
+              <div>
+                <p className="mb-2 text-xs text-muted">Clique nos horários para bloquear/liberar:</p>
+                <div className="grid grid-cols-4 gap-1">
+                  {generateAllSlots().map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => {
+                        setBlockedSlots((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(slot)) {
+                            next.delete(slot);
+                          } else {
+                            next.add(slot);
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`rounded-lg px-2 py-1.5 text-xs font-medium transition ${
+                        blockedSlots.has(slot)
+                          ? "bg-crimson/30 text-red-300"
+                          : "bg-panel text-cream hover:bg-panel-2"
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

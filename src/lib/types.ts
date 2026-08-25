@@ -63,4 +63,5 @@ export type BarberSchedule = {
   available: boolean;
   startTime: string | null;
   endTime: string | null;
+  blockedSlots: string[];
 };

@@ -162,6 +162,9 @@ grant select, insert, update, delete on all tables in schema public to service_r
 --     unique (barber_id, date)
 --   );
 -- ------------------------------------------------------------
+-- Migração para horários bloqueados individualmente:
+--   alter table public.barber_schedules add column if not exists blocked_slots text;
+-- ------------------------------------------------------------
 
 -- ------------------------------------------------------------
 -- Observação: o primeiro usuário administrador NÃO entra aqui.

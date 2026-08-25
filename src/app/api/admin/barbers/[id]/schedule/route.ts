@@ -36,11 +36,12 @@ export async function POST(
     return Response.json({ error: "Requisição inválida" }, { status: 400 });
   }
 
-  const { date, available, startTime, endTime } = body as {
+  const { date, available, startTime, endTime, blockedSlots } = body as {
     date?: string;
     available?: boolean;
     startTime?: string | null;
     endTime?: string | null;
+    blockedSlots?: string[];
   };
 
   if (!date || typeof available !== "boolean") {
@@ -54,6 +55,7 @@ export async function POST(
       available,
       startTime: startTime ?? null,
       endTime: endTime ?? null,
+      blockedSlots: blockedSlots ?? [],
     });
     return Response.json({ schedule: entry });
   } catch (e) {
