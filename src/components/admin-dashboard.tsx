@@ -163,8 +163,10 @@ function AppointmentsTab() {
       }
     }
     run();
+    const id = setInterval(() => { if (!cancelled) run(); }, 15000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, [status, barberId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -569,8 +571,10 @@ function BarbersTab() {
       }
     }
     run();
+    const id = setInterval(() => { if (!cancelled) run(); }, 15000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, []);
 
@@ -1163,8 +1167,10 @@ function ServicesTab() {
       }
     }
     run();
+    const id = setInterval(() => { if (!cancelled) run(); }, 15000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, []);
 

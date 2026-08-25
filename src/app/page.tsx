@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { RegistrationForm } from "@/components/registration-form";
-import { formatPrice } from "@/lib/config";
-import { listServices, getSettings } from "@/lib/db";
+import { ServicesList } from "@/components/services-list";
+import { getSettings } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +30,6 @@ function ShopIcon({ icon }: { icon: string }) {
 }
 
 export default async function Home() {
-  let services: { name: string; priceCents: number; emoji: string; imageUrl: string | null }[] = [];
-  try {
-    services = await listServices(true);
-  } catch {
-    services = [];
-  }
-
   let settings: Record<string, string> = {};
   try {
     settings = await getSettings();
@@ -67,38 +60,7 @@ export default async function Home() {
         <RegistrationForm barbershopName={shopName} />
       </section>
 
-      {services.length > 0 ? (
-        <section className="rounded-3xl border border-line bg-ink-soft/60 p-5">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-muted">
-            Serviços
-          </h2>
-          <ul className="divide-y divide-line">
-            {services.map((s) => (
-              <li
-                key={s.name}
-                className="flex items-center gap-3 py-2.5"
-              >
-                {s.imageUrl ? (
-                  <Image
-                    src={s.imageUrl}
-                    alt={s.name}
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 rounded-lg object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <span className="text-lg">{s.emoji}</span>
-                )}
-                <span className="flex-1 text-cream">{s.name}</span>
-                <span className="font-semibold text-gold">
-                  {formatPrice(s.priceCents)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <ServicesList />
 
       <footer className="pb-6 text-center text-xs text-muted/60">
         <div className="space-y-1">
