@@ -26,12 +26,10 @@ export function confirmationMessage(opts: {
   const sep = "────────────";
   const lines = [
     `Olá, ${opts.barberName}!`,
-    "",
-    `Novo agendamento em ${opts.barbershop}`,
+    `Novo agendamento em *${opts.barbershop}*`,
     "",
     sep,
-    `Cliente: ${opts.clientName}`,
-    `Profissional: ${opts.barberName}`,
+    `Cliente: *${opts.clientName}*`,
     `Serviço: ${opts.serviceName}`,
     `Valor: ${opts.price}`,
     `Data: ${formatDateBR(opts.date)}`,
@@ -45,10 +43,8 @@ export function confirmationMessage(opts: {
   }
   lines.push(
     sep,
-    "Horário confirmado automaticamente.",
-    sep,
     `Cancelar: ${opts.cancelUrl}`,
-    sep
+    sep,
   );
   return lines.join("\n");
 }
