@@ -658,20 +658,26 @@ function BarbersTab() {
           {items.map((b) => (
             <div
               key={b.id}
-              className="flex items-center gap-3 rounded-2xl border border-line bg-panel p-3 sm:p-4"
+              className="flex flex-col gap-2 rounded-2xl border border-line bg-panel p-3 sm:flex-row sm:items-center sm:p-4"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {b.photoUrl ? (
                   <img
                     src={b.photoUrl}
                     alt={b.name}
-                    className="h-12 w-12 rounded-full object-cover"
+                    className="h-12 w-12 shrink-0 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/40 bg-panel-2 text-xl">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-panel-2 text-xl">
                     🧑‍💼
                   </span>
                 )}
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="font-semibold text-cream">{b.name}</p>
+                  <p className="text-sm text-muted">{b.phone || "Sem WhatsApp cadastrado"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
                 <label className="cursor-pointer rounded-lg border border-line px-2 py-1 text-xs font-semibold text-muted transition hover:border-gold/60 hover:text-gold">
                   📷 Foto
                   <input
@@ -714,12 +720,6 @@ function BarbersTab() {
                     🗑️
                   </button>
                 ) : null}
-              </div>
-              <div className="min-w-0 flex-1 space-y-0.5">
-                <p className="font-semibold text-cream">{b.name}</p>
-                <p className="text-sm text-muted">{b.phone || "Sem WhatsApp cadastrado"}</p>
-              </div>
-              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => { setEditingBarber(b); setEditName(b.name); setEditPhone(b.phone); }}
