@@ -828,6 +828,7 @@ function BarberScheduleModal({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [blockMode, setBlockMode] = useState<"total" | "partial">("total");
 
   const monthStr = String(month + 1).padStart(2, "0");
   const from = `${year}-${monthStr}-01`;
@@ -857,20 +858,18 @@ function BarberScheduleModal({
     loadSchedule();
   }, [loadSchedule]);
 
-  async function toggleDay(date: string) {
-    const existing = schedule[date];
-    const available = existing ? !existing.available : false;
+  async function saveSchedule(
+    date: string,
+    available: boolean,
+    startTime: string | null,
+    endTime: string | null
+  ) {
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/barbers/${barber.id}/schedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date,
-          available,
-          startTime: existing?.startTime ?? null,
-          endTime: existing?.endTime ?? null,
-        }),
+        body: JSON.stringify({ date, available, startTime, endTime }),
       });
       const data = await res.json();
       if (data.schedule) {
@@ -883,37 +882,52 @@ function BarberScheduleModal({
     }
   }
 
-  async function saveTimes(date: string, startTime: string, endTime: string) {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/admin/barbers/${barber.id}/schedule`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date,
-          available: true,
-          startTime: startTime || null,
-          endTime: endTime || null,
-        }),
-      });
-      const data = await res.json();
-      if (data.schedule) {
-        setSchedule((prev) => ({ ...prev, [date]: data.schedule }));
-        setSelectedDate(null);
+  function handleDateClick(date: string) {
+    if (date < today) return;
+    if (selectedDate === date) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(date);
+      const existing = schedule[date];
+      if (existing) {
+        setBlockMode(
+          existing.startTime && existing.endTime ? "partial" : "total"
+        );
+      } else {
+        setBlockMode("total");
       }
-    } catch {
-      // ignore
-    } finally {
-      setSaving(false);
     }
   }
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  async function applyBlock() {
+    if (!selectedDate) return;
+    if (blockMode === "total") {
+      await saveSchedule(selectedDate, false, null, null);
+    } else {
+      const startEl = document.getElementById(
+        `block-start-${selectedDate}`
+      ) as HTMLInputElement | null;
+      const endEl = document.getElementById(
+        `block-end-${selectedDate}`
+      ) as HTMLInputElement | null;
+      const startTime = startEl?.value || "08:00";
+      const endTime = endEl?.value || "18:00";
+      await saveSchedule(selectedDate, false, startTime, endTime);
+    }
+    setSelectedDate(null);
+  }
+
+  async function clearDay() {
+    if (!selectedDate) return;
+    await saveSchedule(selectedDate, true, null, null);
+    setSelectedDate(null);
+  }
+
   const firstDayOfWeek = new Date(year, month, 1).getDay();
 
   const cells: (string | null)[] = [];
   for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) {
+  for (let d = 1; d <= lastDay; d++) {
     cells.push(
       `${year}-${monthStr}-${String(d).padStart(2, "0")}`
     );
@@ -993,33 +1007,23 @@ function BarberScheduleModal({
               if (!date) return <div key={`empty-${i}`} />;
               const entry = schedule[date];
               const isPast = date < today;
-              const isOff = entry && !entry.available;
-              const hasCustomTime =
-                entry?.available && entry.startTime && entry.endTime;
+              const isTotalOff = entry && !entry.available && !entry.startTime;
+              const isPartialOff =
+                entry && !entry.available && entry.startTime && entry.endTime;
 
               return (
                 <button
                   key={date}
                   type="button"
                   disabled={isPast || saving}
-                  onClick={() => {
-                    if (isPast) return;
-                    if (selectedDate === date) {
-                      setSelectedDate(null);
-                    } else {
-                      setSelectedDate(date);
-                      if (!entry || (!entry.available && !entry.startTime)) {
-                        toggleDay(date);
-                      }
-                    }
-                  }}
+                  onClick={() => handleDateClick(date)}
                   className={`relative flex h-9 items-center justify-center rounded-lg text-xs font-medium transition ${
                     isPast
                       ? "cursor-not-allowed text-muted/30"
-                      : isOff
-                        ? "bg-crimson/20 text-red-300 hover:bg-crimson/30"
-                        : hasCustomTime
-                          ? "bg-gold/20 text-gold hover:bg-gold/30"
+                      : isTotalOff
+                        ? "bg-crimson/30 text-red-200 hover:bg-crimson/40"
+                        : isPartialOff
+                          ? "bg-crimson/15 text-red-300 hover:bg-crimson/25"
                           : "text-cream hover:bg-panel-2"
                   } ${selectedDate === date ? "ring-2 ring-gold" : ""}`}
                 >
@@ -1032,72 +1036,88 @@ function BarberScheduleModal({
 
         <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-3 w-3 rounded bg-crimson/20" /> Indisponível
+            <span className="inline-block h-3 w-3 rounded bg-crimson/30" /> Indisponível total
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-3 w-3 rounded bg-gold/20" /> Horário customizado
+            <span className="inline-block h-3 w-3 rounded bg-crimson/15" /> Indisponível parcial
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-3 w-3 rounded bg-panel-2" /> Padrão
+            <span className="inline-block h-3 w-3 rounded bg-panel-2" /> Padrão (08h-18h)
           </span>
         </div>
 
         {selectedDate && (
-          <div className="mt-4 rounded-xl border border-line bg-panel-2 p-3">
-            <p className="mb-2 text-sm font-semibold text-cream">
+          <div className="mt-4 rounded-xl border border-line bg-panel-2 p-3 space-y-3">
+            <p className="text-sm font-semibold text-cream">
               {formatDateBR(selectedDate)}
             </p>
-            <p className="mb-2 text-xs text-muted">
-              Clique no dia para marcar como{" "}
-              {selected?.available ? "indisponível" : "disponível"}.
-            </p>
-            {selected?.available && (
+
+            {selected && !selected.available && (
+              <p className="text-xs text-muted">
+                {selected.startTime
+                  ? `Bloqueado das ${selected.startTime} às ${selected.endTime}`
+                  : "Bloqueado o dia todo"}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setBlockMode("total")}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  blockMode === "total"
+                    ? "bg-crimson/30 text-red-200"
+                    : "bg-panel text-muted hover:text-cream"
+                }`}
+              >
+                Indisponível total
+              </button>
+              <button
+                type="button"
+                onClick={() => setBlockMode("partial")}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  blockMode === "partial"
+                    ? "bg-crimson/30 text-red-200"
+                    : "bg-panel text-muted hover:text-cream"
+                }`}
+              >
+                Indisponível parcial
+              </button>
+            </div>
+
+            {blockMode === "partial" && (
               <div className="flex items-center gap-2">
-                <div>
-                  <label className="mb-1 block text-xs text-muted">Início</label>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs text-muted">Bloquear a partir de</label>
                   <input
                     type="time"
-                    defaultValue={selected.startTime ?? "08:00"}
-                    id={`start-${selectedDate}`}
-                    className="h-8 rounded-lg border border-line bg-panel px-2 text-xs text-cream"
+                    defaultValue={selected?.startTime ?? "08:00"}
+                    id={`block-start-${selectedDate}`}
+                    className="h-9 w-full rounded-lg border border-line bg-panel px-2 text-xs text-cream"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs text-muted">Fim</label>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs text-muted">Até</label>
                   <input
                     type="time"
-                    defaultValue={selected.endTime ?? "18:00"}
-                    id={`end-${selectedDate}`}
-                    className="h-8 rounded-lg border border-line bg-panel px-2 text-xs text-cream"
+                    defaultValue={selected?.endTime ?? "18:00"}
+                    id={`block-end-${selectedDate}`}
+                    className="h-9 w-full rounded-lg border border-line bg-panel px-2 text-xs text-cream"
                   />
                 </div>
-                <Button
-                  className="mt-4"
-                  onClick={() => {
-                    const startEl = document.getElementById(
-                      `start-${selectedDate}`
-                    ) as HTMLInputElement | null;
-                    const endEl = document.getElementById(
-                      `end-${selectedDate}`
-                    ) as HTMLInputElement | null;
-                    if (startEl && endEl) {
-                      saveTimes(selectedDate, startEl.value, endEl.value);
-                    }
-                  }}
-                  disabled={saving}
-                >
-                  Salvar horário
-                </Button>
               </div>
             )}
-            {(!selected || !selected.available) && (
-              <Button
-                onClick={() => toggleDay(selectedDate)}
-                disabled={saving}
-              >
-                Marcar disponível
+
+            <div className="flex gap-2">
+              <Button onClick={applyBlock} disabled={saving}>
+                Aplicar
               </Button>
-            )}
+              {selected && (
+                <Button variant="secondary" onClick={clearDay} disabled={saving}>
+                  Limpar dia
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
@@ -1417,11 +1437,15 @@ function SettingsTab() {
   const [address, setAddress] = useState("");
   const [copyright, setCopyright] = useState("");
   const [credit, setCredit] = useState("");
+  const [workStart, setWorkStart] = useState("08:00");
+  const [workEnd, setWorkEnd] = useState("18:00");
   const [loading, setLoading] = useState(true);
   const [savingIdentity, setSavingIdentity] = useState(false);
   const [savedIdentity, setSavedIdentity] = useState(false);
   const [savingFooter, setSavingFooter] = useState(false);
   const [savedFooter, setSavedFooter] = useState(false);
+  const [savingHours, setSavingHours] = useState(false);
+  const [savedHours, setSavedHours] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1438,6 +1462,8 @@ function SettingsTab() {
           setAddress(data.settings.barbershop_address ?? "");
           setCopyright(data.settings.footer_copyright ?? "");
           setCredit(data.settings.footer_credit ?? "");
+          setWorkStart(data.settings.working_hours_start ?? "08:00");
+          setWorkEnd(data.settings.working_hours_end ?? "18:00");
         }
       } catch (e) {
         if (!cancelled)
@@ -1472,6 +1498,27 @@ function SettingsTab() {
       setError(e instanceof Error ? e.message : "Erro ao salvar.");
     } finally {
       setSavingIdentity(false);
+    }
+  }
+
+  async function saveHours() {
+    setSavingHours(true);
+    setSavedHours(false);
+    setError(null);
+    try {
+      await api("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          working_hours_start: workStart,
+          working_hours_end: workEnd,
+        }),
+      });
+      setSavedHours(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao salvar.");
+    } finally {
+      setSavingHours(false);
     }
   }
 
@@ -1582,6 +1629,41 @@ function SettingsTab() {
             Salvar
           </Button>
           {savedIdentity ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-line bg-panel p-5">
+        <h2 className="mb-1 text-lg font-bold text-cream">Horário de funcionamento</h2>
+        <p className="mb-4 text-sm text-muted">
+          Horário padrão usado quando o barbeiro não tem agenda configurada.
+        </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <label className="mb-1 block text-xs text-muted">Abertura</label>
+            <input
+              type="time"
+              value={workStart}
+              onChange={(e) => setWorkStart(e.target.value)}
+              className="h-9 rounded-lg border border-line bg-panel px-3 text-sm text-cream outline-none transition focus:border-gold/60"
+            />
+          </div>
+          <span className="mt-5 text-muted">até</span>
+          <div>
+            <label className="mb-1 block text-xs text-muted">Fechamento</label>
+            <input
+              type="time"
+              value={workEnd}
+              onChange={(e) => setWorkEnd(e.target.value)}
+              className="h-9 rounded-lg border border-line bg-panel px-3 text-sm text-cream outline-none transition focus:border-gold/60"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <Button onClick={saveHours} disabled={savingHours || loading}>
+            {savingHours ? <Spinner className="h-5 w-5" /> : null}
+            Salvar
+          </Button>
+          {savedHours ? <span className="text-sm font-semibold text-gold">Salvo!</span> : null}
         </div>
       </div>
 

@@ -642,6 +642,8 @@ const DEFAULT_SETTINGS: SettingsMap = {
   barbershop_address: "Rua São Bento do Sapucaí, 594 - Pindamonhangaba-SP, 12420-190",
   footer_copyright: "© 2026 MinhaBarbearia - Todos os direitos reservados",
   footer_credit: "Desenvolvido por DIEGO NEVES",
+  working_hours_start: "08:00",
+  working_hours_end: "18:00",
 };
 
 export async function getSettings(): Promise<SettingsMap> {

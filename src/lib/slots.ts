@@ -11,23 +11,7 @@ import {
 import { addDaysToDate, nowTimeInTZ, todayInTZ } from "./date";
 import type { BarberSchedule, Slot } from "./types";
 
-export function generateAllSlots(): string[] {
-  const slots: string[] = [];
-  let current = parse(OPEN_TIME, "HH:mm", new Date());
-  const close = parse(CLOSE_TIME, "HH:mm", new Date());
-  const lunchStart = parse(LUNCH_BREAK.start, "HH:mm", new Date());
-  const lunchEnd = parse(LUNCH_BREAK.end, "HH:mm", new Date());
-
-  while (current < close) {
-    if (!(current >= lunchStart && current < lunchEnd)) {
-      slots.push(format(current, "HH:mm"));
-    }
-    current = addMinutes(current, SLOT_MINUTES);
-  }
-  return slots;
-}
-
-function generateSlotsForRange(start: string, end: string): string[] {
+function generateSlotsInRange(start: string, end: string): string[] {
   const slots: string[] = [];
   let current = parse(start, "HH:mm", new Date());
   const close = parse(end, "HH:mm", new Date());
@@ -41,6 +25,10 @@ function generateSlotsForRange(start: string, end: string): string[] {
     current = addMinutes(current, SLOT_MINUTES);
   }
   return slots;
+}
+
+export function generateAllSlots(openTime = OPEN_TIME, closeTime = CLOSE_TIME): string[] {
+  return generateSlotsInRange(openTime, closeTime);
 }
 
 export function isWorkingDay(date: string): boolean {
@@ -65,16 +53,22 @@ export function isDateSelectable(date: string): boolean {
 export function availableSlotsFor(
   date: string,
   booked: string[],
-  schedule?: BarberSchedule | null
+  schedule?: BarberSchedule | null,
+  defaultOpen?: string,
+  defaultClose?: string
 ): Slot[] {
   let slots: string[];
 
-  if (schedule && !schedule.available) {
+  if (schedule && !schedule.available && !schedule.startTime) {
     return [];
+  } else if (schedule && !schedule.available && schedule.startTime && schedule.endTime) {
+    const allSlots = generateAllSlots(defaultOpen, defaultClose);
+    const blockedSet = new Set(generateSlotsInRange(schedule.startTime, schedule.endTime));
+    slots = allSlots.filter((s) => !blockedSet.has(s));
   } else if (schedule?.available && schedule.startTime && schedule.endTime) {
-    slots = generateSlotsForRange(schedule.startTime, schedule.endTime);
+    slots = generateSlotsInRange(schedule.startTime, schedule.endTime);
   } else {
-    slots = generateAllSlots();
+    slots = generateAllSlots(defaultOpen, defaultClose);
   }
 
   const bookedSet = new Set(booked);
