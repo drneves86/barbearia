@@ -45,10 +45,12 @@ export default async function CancelarPage({
     <CancelForm
       token={token}
       barberName={appointment.barberName}
+      barberPhotoUrl={appointment.barberPhotoUrl}
       date={appointment.date}
       time={appointment.time}
       serviceEmoji={appointment.serviceEmoji}
       serviceName={appointment.serviceName}
+      serviceImageUrl={appointment.serviceImageUrl}
       priceCents={appointment.priceCents}
       userName={appointment.userName}
       userLastName={appointment.userLastName ?? ""}

@@ -216,13 +216,13 @@ const APPOINTMENT_SELECT = `
   created_at,
   cancelled_at,
   users ( name, last_name, email, phone ),
-  services ( name, price_cents, emoji ),
-  barbers ( name, phone )
+  services ( name, price_cents, emoji, image_url ),
+  barbers ( name, phone, photo_url )
 `;
 
 type NestedUsers = { name: string; last_name: string | null; email: string | null; phone: string };
-type NestedServices = { name: string; price_cents: number; emoji: string };
-type NestedBarbers = { name: string; phone: string | null };
+type NestedServices = { name: string; price_cents: number; emoji: string; image_url: string | null };
+type NestedBarbers = { name: string; phone: string | null; photo_url: string | null };
 
 type AppointmentRow = {
   id: string;
@@ -266,9 +266,11 @@ function mapAppointment(row: AppointmentRow): AppointmentWithDetails {
     userPhone: users?.phone ?? "",
     serviceName: services?.name ?? "",
     serviceEmoji: services?.emoji ?? "💈",
+    serviceImageUrl: services?.image_url ?? "",
     priceCents: services?.price_cents ?? 0,
     barberName: barbers?.name ?? "",
     barberPhone: barbers?.phone ?? "",
+    barberPhotoUrl: barbers?.photo_url ?? "",
   };
 }
 

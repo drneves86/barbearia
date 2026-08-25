@@ -9,10 +9,12 @@ import { formatPrice } from "@/lib/config";
 export type CancelAppointmentInfo = {
   token: string;
   barberName: string;
+  barberPhotoUrl: string;
   date: string;
   time: string;
   serviceEmoji: string;
   serviceName: string;
+  serviceImageUrl: string;
   priceCents: number;
   userName: string;
   userLastName: string;
@@ -84,10 +86,19 @@ export function CancelForm(props: CancelAppointmentInfo) {
 
       <div className="mt-6 rounded-2xl border border-crimson/30 bg-panel p-4">
         <ul className="divide-y divide-line text-sm">
-          <li className="flex justify-between py-2.5">
+          <li className="flex items-center justify-between py-2.5">
             <span className="text-muted">Serviço</span>
-            <span className="font-semibold text-cream">
-              {props.serviceEmoji} {props.serviceName}
+            <span className="flex items-center gap-2 font-semibold text-cream">
+              {props.serviceImageUrl ? (
+                <img
+                  src={props.serviceImageUrl}
+                  alt={props.serviceName}
+                  className="h-8 w-8 rounded-lg object-cover"
+                />
+              ) : (
+                <span>{props.serviceEmoji}</span>
+              )}
+              {props.serviceName}
             </span>
           </li>
           <li className="flex justify-between py-2.5">
@@ -96,9 +107,16 @@ export function CancelForm(props: CancelAppointmentInfo) {
               {formatPrice(props.priceCents)}
             </span>
           </li>
-          <li className="flex justify-between py-2.5">
+          <li className="flex items-center justify-between py-2.5">
             <span className="text-muted">Barbeiro</span>
-            <span className="font-semibold text-cream">
+            <span className="flex items-center gap-2 font-semibold text-cream">
+              {props.barberPhotoUrl ? (
+                <img
+                  src={props.barberPhotoUrl}
+                  alt={props.barberName}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : null}
               {props.barberName}
             </span>
           </li>

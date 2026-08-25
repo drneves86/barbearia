@@ -44,9 +44,11 @@ export type AppointmentWithDetails = AppointmentRecord & {
   userPhone: string;
   serviceName: string;
   serviceEmoji: string;
+  serviceImageUrl: string;
   priceCents: number;
   barberName: string;
   barberPhone: string;
+  barberPhotoUrl: string;
 };
 
 export type Slot = {
