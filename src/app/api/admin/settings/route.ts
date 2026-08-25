@@ -17,7 +17,7 @@ export async function PATCH(request: Request) {
   }
 
   const patch = (body as Record<string, unknown>) ?? {};
-  const ALLOWED = ["barbershop_name", "barbershop_icon", "barbershop_location", "barbershop_address", "footer_copyright", "footer_credit"];
+  const ALLOWED = ["barbershop_name", "barbershop_icon", "barbershop_location", "barbershop_address", "footer_copyright", "footer_credit", "working_hours_start", "working_hours_end"];
   const entries = Object.entries(patch).filter(
     ([key, value]) => ALLOWED.includes(key) && typeof value === "string"
   );
