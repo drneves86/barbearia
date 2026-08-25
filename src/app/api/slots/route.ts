@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       getSettings().catch(() => ({} as Record<string, string>)),
     ]);
 
-    if (schedule && !schedule.available && !schedule.startTime) {
+    if (schedule && !schedule.available && !schedule.startTime && (!schedule.blockedSlots || schedule.blockedSlots.length === 0)) {
       return Response.json({ slots: [] });
     }
 

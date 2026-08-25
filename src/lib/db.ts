@@ -467,23 +467,37 @@ export async function getBarberSchedule(
   startDate: string,
   endDate: string
 ): Promise<BarberSchedule[]> {
-  const { data } = await supabaseAdmin()
-    .from("barber_schedules")
-    .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
-    .eq("barber_id", barberId)
-    .gte("date", startDate)
-    .lte("date", endDate)
-    .order("date", { ascending: true });
-
-  return ((data ?? []) as {
+  let rows: {
     id: string;
     barber_id: string;
     date: string;
     available: boolean;
     start_time: string | null;
     end_time: string | null;
-    blocked_slots: string | null;
-  }[]).map((r) => ({
+    blocked_slots?: string | null;
+  }[] = [];
+
+  try {
+    const { data } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
+      .eq("barber_id", barberId)
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: true });
+    rows = (data ?? []) as typeof rows;
+  } catch {
+    const { data } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select("id, barber_id, date, available, start_time, end_time")
+      .eq("barber_id", barberId)
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: true });
+    rows = (data ?? []) as typeof rows;
+  }
+
+  return rows.map((r) => ({
     id: r.id,
     barberId: r.barber_id,
     date: r.date,
@@ -502,31 +516,65 @@ export async function setBarberSchedule(input: {
   endTime?: string | null;
   blockedSlots?: string[];
 }): Promise<BarberSchedule> {
-  const { data, error } = await supabaseAdmin()
-    .from("barber_schedules")
-    .upsert(
-      {
-        barber_id: input.barberId,
-        date: input.date,
-        available: input.available,
-        start_time: input.startTime ?? null,
-        end_time: input.endTime ?? null,
-        blocked_slots: input.blockedSlots?.length ? input.blockedSlots.join(",") : null,
-      },
-      { onConflict: "barber_id,date" }
-    )
-    .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
-    .single();
+  const baseRow = {
+    barber_id: input.barberId,
+    date: input.date,
+    available: input.available,
+    start_time: input.startTime ?? null,
+    end_time: input.endTime ?? null,
+  };
 
-  if (error) throw new Error("Não foi possível salvar a agenda.");
+  const blockedStr = input.blockedSlots?.length ? input.blockedSlots.join(",") : null;
+
+  let row: Record<string, unknown> | null = null;
+
+  if (blockedStr) {
+    try {
+      const { data, error } = await supabaseAdmin()
+        .from("barber_schedules")
+        .upsert({ ...baseRow, blocked_slots: blockedStr }, { onConflict: "barber_id,date" })
+        .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
+        .single();
+      if (error) throw error;
+      row = data;
+    } catch {
+      const { data, error } = await supabaseAdmin()
+        .from("barber_schedules")
+        .upsert(baseRow, { onConflict: "barber_id,date" })
+        .select("id, barber_id, date, available, start_time, end_time")
+        .single();
+      if (error) throw new Error("Não foi possível salvar a agenda.");
+      row = data;
+    }
+  } else {
+    try {
+      const { data, error } = await supabaseAdmin()
+        .from("barber_schedules")
+        .upsert({ ...baseRow, blocked_slots: null }, { onConflict: "barber_id,date" })
+        .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
+        .single();
+      if (error) throw error;
+      row = data;
+    } catch {
+      const { data, error } = await supabaseAdmin()
+        .from("barber_schedules")
+        .upsert(baseRow, { onConflict: "barber_id,date" })
+        .select("id, barber_id, date, available, start_time, end_time")
+        .single();
+      if (error) throw new Error("Não foi possível salvar a agenda.");
+      row = data;
+    }
+  }
+
+  if (!row) throw new Error("Não foi possível salvar a agenda.");
   return {
-    id: data.id as string,
-    barberId: data.barber_id as string,
-    date: data.date as string,
-    available: data.available as boolean,
-    startTime: data.start_time ? (data.start_time as string).slice(0, 5) : null,
-    endTime: data.end_time ? (data.end_time as string).slice(0, 5) : null,
-    blockedSlots: data.blocked_slots ? (data.blocked_slots as string).split(",").filter(Boolean) : [],
+    id: row.id as string,
+    barberId: row.barber_id as string,
+    date: row.date as string,
+    available: row.available as boolean,
+    startTime: row.start_time ? (row.start_time as string).slice(0, 5) : null,
+    endTime: row.end_time ? (row.end_time as string).slice(0, 5) : null,
+    blockedSlots: row.blocked_slots ? (row.blocked_slots as string).split(",").filter(Boolean) : [],
   };
 }
 
@@ -534,22 +582,43 @@ export async function getBarberDaySchedule(
   barberId: string,
   date: string
 ): Promise<BarberSchedule | null> {
-  const { data } = await supabaseAdmin()
-    .from("barber_schedules")
-    .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
-    .eq("barber_id", barberId)
-    .eq("date", date)
-    .maybeSingle();
+  let row: {
+    id: string;
+    barber_id: string;
+    date: string;
+    available: boolean;
+    start_time: string | null;
+    end_time: string | null;
+    blocked_slots?: string | null;
+  } | null = null;
 
-  if (!data) return null;
+  try {
+    const { data } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
+      .eq("barber_id", barberId)
+      .eq("date", date)
+      .maybeSingle();
+    row = data as typeof row;
+  } catch {
+    const { data } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select("id, barber_id, date, available, start_time, end_time")
+      .eq("barber_id", barberId)
+      .eq("date", date)
+      .maybeSingle();
+    row = data as typeof row;
+  }
+
+  if (!row) return null;
   return {
-    id: data.id as string,
-    barberId: data.barber_id as string,
-    date: data.date as string,
-    available: data.available as boolean,
-    startTime: data.start_time ? (data.start_time as string).slice(0, 5) : null,
-    endTime: data.end_time ? (data.end_time as string).slice(0, 5) : null,
-    blockedSlots: data.blocked_slots ? (data.blocked_slots as string).split(",").filter(Boolean) : [],
+    id: row.id,
+    barberId: row.barber_id,
+    date: row.date,
+    available: row.available,
+    startTime: row.start_time ? row.start_time.slice(0, 5) : null,
+    endTime: row.end_time ? row.end_time.slice(0, 5) : null,
+    blockedSlots: row.blocked_slots ? row.blocked_slots.split(",").filter(Boolean) : [],
   };
 }
 
