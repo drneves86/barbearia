@@ -37,7 +37,6 @@ type Result = {
   cancelUrl: string;
   waLink: string;
   clientName: string;
-  clientLastName: string;
   clientPhone: string;
 };
 
@@ -164,7 +163,6 @@ export function Wizard() {
         cancelUrl: data.cancelUrl,
         waLink: data.waLink,
         clientName: data.clientName || user.name,
-        clientLastName: data.clientLastName || user.lastName || "",
         clientPhone: user.phone,
       });
     } catch {
@@ -498,7 +496,6 @@ export function Wizard() {
 }
 
 function SuccessScreen({ result }: { result: Result }) {
-  const fullName = [result.clientName, result.clientLastName].filter(Boolean).join(" ");
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
       <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gold/15 text-5xl">
@@ -547,7 +544,7 @@ function SuccessScreen({ result }: { result: Result }) {
           </li>
           <li className="flex justify-between py-2">
             <span className="text-muted">Cliente</span>
-            <span className="font-semibold text-cream">{fullName}</span>
+            <span className="font-semibold text-cream">{result.clientName}</span>
           </li>
           <li className="flex justify-between py-2">
             <span className="text-muted">Telefone</span>
