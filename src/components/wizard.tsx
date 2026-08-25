@@ -7,7 +7,7 @@ import { Calendar } from "@/components/calendar";
 import { TimePicker } from "@/components/time-picker";
 import { formatDateBR } from "@/lib/whatsapp";
 import { isDateSelectable } from "@/lib/slots";
-import { todayInTZ } from "@/lib/date";
+import { todayInTZ, addDaysToDate } from "@/lib/date";
 import { appointmentSchema, firstErrorMessage } from "@/lib/validations";
 import { formatPrice } from "@/lib/config";
 import type { Barber, Service, Slot } from "@/lib/types";
@@ -104,10 +104,9 @@ export function Wizard() {
       return;
     }
     try {
-      const now = new Date();
-      const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-      const horizon = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-      const to = `${horizon.getFullYear()}-${String(horizon.getMonth() + 1).padStart(2, "0")}-${String(horizon.getDate()).padStart(2, "0")}`;
+      const today = todayInTZ();
+      const from = today.slice(0, 7) + "-01";
+      const to = addDaysToDate(today, 90);
       const res = await fetch(`/api/schedule?barberId=${encodeURIComponent(bid)}&from=${from}&to=${to}`);
       const data = await res.json();
       const blocked = new Set<string>();
@@ -128,6 +127,8 @@ export function Wizard() {
       return;
     }
     fetchBlockedDates(barberId);
+    const id = setInterval(() => fetchBlockedDates(barberId), 15000);
+    return () => clearInterval(id);
   }, [barberId, fetchBlockedDates]);
 
   const loadSlots = useCallback(async (barber: string, day: string) => {
