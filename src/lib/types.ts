@@ -55,13 +55,3 @@ export type Slot = {
   time: string;
   booked: boolean;
 };
-
-export type BarberSchedule = {
-  id: string;
-  barberId: string;
-  date: string;
-  available: boolean;
-  startTime: string | null;
-  endTime: string | null;
-  blockedSlots: string[];
-};

@@ -21,15 +21,11 @@ export function Calendar({
   onSelect,
   isSelectable,
   today,
-  blockedDates,
-  onMonthChange,
 }: {
   selected: string | null;
   onSelect: (date: string) => void;
   isSelectable: (date: string) => boolean;
   today: string;
-  blockedDates?: Set<string>;
-  onMonthChange?: (year: number, month: number) => void;
 }) {
   const [cursor, setCursor] = useState(() => {
     const base = today ? new Date(today + "T12:00:00") : new Date();
@@ -54,13 +50,7 @@ export function Calendar({
         <button
           type="button"
           disabled={!canPrev}
-          onClick={() => {
-            setCursor((c) => {
-              const prev = subMonths(c, 1);
-              onMonthChange?.(prev.getFullYear(), prev.getMonth());
-              return prev;
-            });
-          }}
+          onClick={() => setCursor((c) => subMonths(c, 1))}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-cream transition hover:border-gold/50 hover:text-gold disabled:opacity-30"
           aria-label="Mês anterior"
         >
@@ -78,13 +68,7 @@ export function Calendar({
         <button
           type="button"
           disabled={cursor >= startOfMonth(addMonths(new Date(today + "T12:00:00"), 2))}
-          onClick={() => {
-            setCursor((c) => {
-              const next = addMonths(c, 1);
-              onMonthChange?.(next.getFullYear(), next.getMonth());
-              return next;
-            });
-          }}
+          onClick={() => setCursor((c) => addMonths(c, 1))}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-cream transition hover:border-gold/50 hover:text-gold disabled:opacity-30"
           aria-label="Próximo mês"
         >
@@ -108,22 +92,19 @@ export function Calendar({
           const isSelected = selected === dateStr;
           const inMonth = isSameMonth(day, cursor);
           const isToday = dateStr === today;
-          const isBlocked = blockedDates?.has(dateStr) ?? false;
 
           return (
             <button
               key={dateStr}
               type="button"
-              disabled={!selectable || isBlocked}
+              disabled={!selectable}
               onClick={() => onSelect(dateStr)}
               className={`relative flex h-11 items-center justify-center rounded-lg text-sm transition ${
                 !inMonth
                   ? "text-muted/30"
-                  : isBlocked
-                    ? "text-red-400/50 line-through"
-                    : selectable
-                      ? "text-cream hover:bg-panel-2"
-                      : "text-muted/30 line-through"
+                  : selectable
+                    ? "text-cream hover:bg-panel-2"
+                    : "text-muted/30 line-through"
               } ${
                 isSelected
                   ? "bg-gold font-bold text-ink shadow-[0_6px_20px_rgba(212,175,55,0.35)] hover:bg-gold"
@@ -135,17 +116,10 @@ export function Calendar({
               }`}
             >
               {format(day, "d")}
-              {isBlocked && inMonth && (
-                <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-red-400" />
-              )}
             </button>
           );
         })}
       </div>
-
-      <p className="mt-3 border-t border-line pt-3 text-center text-xs text-muted">
-        Dias bloqueados pelo barbeiro aparecem em vermelho.
-      </p>
     </div>
   );
 }
