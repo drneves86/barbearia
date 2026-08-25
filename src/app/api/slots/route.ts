@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getBookedTimes } from "@/lib/db";
+import { getBarberDaySchedule, getBookedTimes } from "@/lib/db";
 import { availableSlotsFor, isDateSelectable } from "@/lib/slots";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +18,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const booked = await getBookedTimes(date, barberId);
-    return Response.json({ slots: availableSlotsFor(date, booked) });
+    const [booked, schedule] = await Promise.all([
+      getBookedTimes(date, barberId),
+      getBarberDaySchedule(barberId, date),
+    ]);
+    return Response.json({ slots: availableSlotsFor(date, booked, schedule) });
   } catch {
     return Response.json({ error: "Erro ao consultar disponibilidade" }, { status: 500 });
   }

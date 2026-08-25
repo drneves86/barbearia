@@ -150,6 +150,18 @@ grant select, insert, update, delete on all tables in schema public to service_r
 -- Migração para a coluna de foto do barbeiro:
 --   alter table public.barbers add column if not exists photo_url text;
 -- ------------------------------------------------------------
+-- Migração para agenda individual do barbeiro:
+--   create table if not exists public.barber_schedules (
+--     id uuid primary key default gen_random_uuid(),
+--     barber_id uuid not null references public.barbers(id) on delete cascade,
+--     date date not null,
+--     available boolean not null default true,
+--     start_time time,
+--     end_time time,
+--     created_at timestamptz not null default now(),
+--     unique (barber_id, date)
+--   );
+-- ------------------------------------------------------------
 
 -- ------------------------------------------------------------
 -- Observação: o primeiro usuário administrador NÃO entra aqui.

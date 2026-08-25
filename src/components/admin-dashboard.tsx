@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button, ErrorBox, Input, Spinner } from "@/components/ui";
 import { buildWaLink, formatDateBR } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/config";
 import { todayInTZ } from "@/lib/date";
-import type { AppointmentWithDetails, Barber, Service } from "@/lib/types";
+import type { AppointmentWithDetails, Barber, BarberSchedule, Service } from "@/lib/types";
 
 type Tab = "appointments" | "barbers" | "services" | "settings";
 
@@ -564,6 +564,7 @@ function BarbersTab() {
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [schedulingBarber, setSchedulingBarber] = useState<Barber | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -733,6 +734,13 @@ function BarbersTab() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setSchedulingBarber(b)}
+                  className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted transition hover:border-gold/50 hover:text-gold"
+                >
+                  Agenda
+                </button>
+                <button
+                  type="button"
                   onClick={() => save(b, { active: !b.active })}
                   className={`rounded-full px-2.5 py-1 text-xs font-bold transition ${
                     b.active
@@ -789,6 +797,316 @@ function BarbersTab() {
           </div>
         </div>
       )}
+
+      {schedulingBarber && (
+        <BarberScheduleModal
+          barber={schedulingBarber}
+          onClose={() => setSchedulingBarber(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+function BarberScheduleModal({
+  barber,
+  onClose,
+}: {
+  barber: Barber;
+  onClose: () => void;
+}) {
+  const today = todayInTZ();
+  const [year, setYear] = useState(() => Number(today.slice(0, 4)));
+  const [month, setMonth] = useState(() => Number(today.slice(5, 7)) - 1);
+  const [schedule, setSchedule] = useState<Record<string, BarberSchedule>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const monthStr = String(month + 1).padStart(2, "0");
+  const from = `${year}-${monthStr}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const to = `${year}-${monthStr}-${String(lastDay).padStart(2, "0")}`;
+
+  const loadSchedule = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/admin/barbers/${barber.id}/schedule?from=${from}&to=${to}`
+      );
+      const data = await res.json();
+      const map: Record<string, BarberSchedule> = {};
+      for (const entry of data.schedule ?? []) {
+        map[entry.date] = entry;
+      }
+      setSchedule(map);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [barber.id, from, to]);
+
+  useEffect(() => {
+    loadSchedule();
+  }, [loadSchedule]);
+
+  async function toggleDay(date: string) {
+    const existing = schedule[date];
+    const available = existing ? !existing.available : false;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/barbers/${barber.id}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date,
+          available,
+          startTime: existing?.startTime ?? null,
+          endTime: existing?.endTime ?? null,
+        }),
+      });
+      const data = await res.json();
+      if (data.schedule) {
+        setSchedule((prev) => ({ ...prev, [date]: data.schedule }));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveTimes(date: string, startTime: string, endTime: string) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/barbers/${barber.id}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date,
+          available: true,
+          startTime: startTime || null,
+          endTime: endTime || null,
+        }),
+      });
+      const data = await res.json();
+      if (data.schedule) {
+        setSchedule((prev) => ({ ...prev, [date]: data.schedule }));
+        setSelectedDate(null);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+  const cells: (string | null)[] = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push(
+      `${year}-${monthStr}-${String(d).padStart(2, "0")}`
+    );
+  }
+
+  function prevMonth() {
+    if (month === 0) {
+      setMonth(11);
+      setYear((y) => y - 1);
+    } else {
+      setMonth((m) => m - 1);
+    }
+  }
+
+  function nextMonth() {
+    if (month === 11) {
+      setMonth(0);
+      setYear((y) => y + 1);
+    } else {
+      setMonth((m) => m + 1);
+    }
+  }
+
+  const selected = selectedDate ? schedule[selectedDate] : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-panel p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-cream">
+            Agenda — {barber.name}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted hover:text-cream"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="rounded-lg px-2 py-1 text-sm text-muted hover:text-cream"
+          >
+            ←
+          </button>
+          <span className="font-semibold text-cream">
+            {MONTH_NAMES[month]} {year}
+          </span>
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="rounded-lg px-2 py-1 text-sm text-muted hover:text-cream"
+          >
+            →
+          </button>
+        </div>
+
+        <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted">
+          {WEEKDAYS.map((d) => (
+            <div key={d} className="py-1">
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Spinner className="h-6 w-6 text-gold" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((date, i) => {
+              if (!date) return <div key={`empty-${i}`} />;
+              const entry = schedule[date];
+              const isPast = date < today;
+              const isOff = entry && !entry.available;
+              const hasCustomTime =
+                entry?.available && entry.startTime && entry.endTime;
+
+              return (
+                <button
+                  key={date}
+                  type="button"
+                  disabled={isPast || saving}
+                  onClick={() => {
+                    if (isPast) return;
+                    if (selectedDate === date) {
+                      setSelectedDate(null);
+                    } else {
+                      setSelectedDate(date);
+                      if (!entry || (!entry.available && !entry.startTime)) {
+                        toggleDay(date);
+                      }
+                    }
+                  }}
+                  className={`relative flex h-9 items-center justify-center rounded-lg text-xs font-medium transition ${
+                    isPast
+                      ? "cursor-not-allowed text-muted/30"
+                      : isOff
+                        ? "bg-crimson/20 text-red-300 hover:bg-crimson/30"
+                        : hasCustomTime
+                          ? "bg-gold/20 text-gold hover:bg-gold/30"
+                          : "text-cream hover:bg-panel-2"
+                  } ${selectedDate === date ? "ring-2 ring-gold" : ""}`}
+                >
+                  {Number(date.slice(8))}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded bg-crimson/20" /> Indisponível
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded bg-gold/20" /> Horário customizado
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded bg-panel-2" /> Padrão
+          </span>
+        </div>
+
+        {selectedDate && (
+          <div className="mt-4 rounded-xl border border-line bg-panel-2 p-3">
+            <p className="mb-2 text-sm font-semibold text-cream">
+              {formatDateBR(selectedDate)}
+            </p>
+            <p className="mb-2 text-xs text-muted">
+              Clique no dia para marcar como{" "}
+              {selected?.available ? "indisponível" : "disponível"}.
+            </p>
+            {selected?.available && (
+              <div className="flex items-center gap-2">
+                <div>
+                  <label className="mb-1 block text-xs text-muted">Início</label>
+                  <input
+                    type="time"
+                    defaultValue={selected.startTime ?? "08:00"}
+                    id={`start-${selectedDate}`}
+                    className="h-8 rounded-lg border border-line bg-panel px-2 text-xs text-cream"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted">Fim</label>
+                  <input
+                    type="time"
+                    defaultValue={selected.endTime ?? "18:00"}
+                    id={`end-${selectedDate}`}
+                    className="h-8 rounded-lg border border-line bg-panel px-2 text-xs text-cream"
+                  />
+                </div>
+                <Button
+                  className="mt-4"
+                  onClick={() => {
+                    const startEl = document.getElementById(
+                      `start-${selectedDate}`
+                    ) as HTMLInputElement | null;
+                    const endEl = document.getElementById(
+                      `end-${selectedDate}`
+                    ) as HTMLInputElement | null;
+                    if (startEl && endEl) {
+                      saveTimes(selectedDate, startEl.value, endEl.value);
+                    }
+                  }}
+                  disabled={saving}
+                >
+                  Salvar horário
+                </Button>
+              </div>
+            )}
+            {(!selected || !selected.available) && (
+              <Button
+                onClick={() => toggleDay(selectedDate)}
+                disabled={saving}
+              >
+                Marcar disponível
+              </Button>
+            )}
+          </div>
+        )}
+
+        <div className="mt-4 flex justify-end">
+          <Button variant="secondary" onClick={onClose}>
+            Fechar
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

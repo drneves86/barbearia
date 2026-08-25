@@ -5,6 +5,7 @@ import type {
   AppointmentRecord,
   AppointmentWithDetails,
   Barber,
+  BarberSchedule,
   Service,
   UserRecord,
 } from "./types";
@@ -454,6 +455,94 @@ export async function updateBarber(
 export async function deleteBarber(id: string): Promise<boolean> {
   const { error } = await supabaseAdmin().from("barbers").delete().eq("id", id);
   return !error;
+}
+
+// ------------------------------------------------------------
+// Agenda do barbeiro
+// ------------------------------------------------------------
+export async function getBarberSchedule(
+  barberId: string,
+  startDate: string,
+  endDate: string
+): Promise<BarberSchedule[]> {
+  const { data } = await supabaseAdmin()
+    .from("barber_schedules")
+    .select("id, barber_id, date, available, start_time, end_time")
+    .eq("barber_id", barberId)
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true });
+
+  return ((data ?? []) as {
+    id: string;
+    barber_id: string;
+    date: string;
+    available: boolean;
+    start_time: string | null;
+    end_time: string | null;
+  }[]).map((r) => ({
+    id: r.id,
+    barberId: r.barber_id,
+    date: r.date,
+    available: r.available,
+    startTime: r.start_time ? r.start_time.slice(0, 5) : null,
+    endTime: r.end_time ? r.end_time.slice(0, 5) : null,
+  }));
+}
+
+export async function setBarberSchedule(input: {
+  barberId: string;
+  date: string;
+  available: boolean;
+  startTime?: string | null;
+  endTime?: string | null;
+}): Promise<BarberSchedule> {
+  const { data, error } = await supabaseAdmin()
+    .from("barber_schedules")
+    .upsert(
+      {
+        barber_id: input.barberId,
+        date: input.date,
+        available: input.available,
+        start_time: input.startTime ?? null,
+        end_time: input.endTime ?? null,
+      },
+      { onConflict: "barber_id,date" }
+    )
+    .select("id, barber_id, date, available, start_time, end_time")
+    .single();
+
+  if (error) throw new Error("Não foi possível salvar a agenda.");
+  return {
+    id: data.id as string,
+    barberId: data.barber_id as string,
+    date: data.date as string,
+    available: data.available as boolean,
+    startTime: data.start_time ? (data.start_time as string).slice(0, 5) : null,
+    endTime: data.end_time ? (data.end_time as string).slice(0, 5) : null,
+  };
+}
+
+export async function getBarberDaySchedule(
+  barberId: string,
+  date: string
+): Promise<BarberSchedule | null> {
+  const { data } = await supabaseAdmin()
+    .from("barber_schedules")
+    .select("id, barber_id, date, available, start_time, end_time")
+    .eq("barber_id", barberId)
+    .eq("date", date)
+    .maybeSingle();
+
+  if (!data) return null;
+  return {
+    id: data.id as string,
+    barberId: data.barber_id as string,
+    date: data.date as string,
+    available: data.available as boolean,
+    startTime: data.start_time ? (data.start_time as string).slice(0, 5) : null,
+    endTime: data.end_time ? (data.end_time as string).slice(0, 5) : null,
+  };
 }
 
 // Serviços (CRUD admin)

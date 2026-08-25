@@ -9,12 +9,28 @@ import {
   WORKING_DAYS,
 } from "./config";
 import { addDaysToDate, nowTimeInTZ, todayInTZ } from "./date";
-import type { Slot } from "./types";
+import type { BarberSchedule, Slot } from "./types";
 
 export function generateAllSlots(): string[] {
   const slots: string[] = [];
   let current = parse(OPEN_TIME, "HH:mm", new Date());
   const close = parse(CLOSE_TIME, "HH:mm", new Date());
+  const lunchStart = parse(LUNCH_BREAK.start, "HH:mm", new Date());
+  const lunchEnd = parse(LUNCH_BREAK.end, "HH:mm", new Date());
+
+  while (current < close) {
+    if (!(current >= lunchStart && current < lunchEnd)) {
+      slots.push(format(current, "HH:mm"));
+    }
+    current = addMinutes(current, SLOT_MINUTES);
+  }
+  return slots;
+}
+
+function generateSlotsForRange(start: string, end: string): string[] {
+  const slots: string[] = [];
+  let current = parse(start, "HH:mm", new Date());
+  const close = parse(end, "HH:mm", new Date());
   const lunchStart = parse(LUNCH_BREAK.start, "HH:mm", new Date());
   const lunchEnd = parse(LUNCH_BREAK.end, "HH:mm", new Date());
 
@@ -46,8 +62,21 @@ export function isDateSelectable(date: string): boolean {
   return !isDateInPast(date) && !isDateBeyondHorizon(date) && isWorkingDay(date);
 }
 
-export function availableSlotsFor(date: string, booked: string[]): Slot[] {
-  const slots = generateAllSlots();
+export function availableSlotsFor(
+  date: string,
+  booked: string[],
+  schedule?: BarberSchedule | null
+): Slot[] {
+  let slots: string[];
+
+  if (schedule && !schedule.available) {
+    return [];
+  } else if (schedule?.available && schedule.startTime && schedule.endTime) {
+    slots = generateSlotsForRange(schedule.startTime, schedule.endTime);
+  } else {
+    slots = generateAllSlots();
+  }
+
   const bookedSet = new Set(booked);
   const today = todayInTZ();
   const nowHHmm = nowTimeInTZ();
