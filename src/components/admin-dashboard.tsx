@@ -22,19 +22,7 @@ async function api<T>(url: string, opts?: RequestInit): Promise<T> {
 
 export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window !== "undefined") {
-      const isRefresh = performance.navigation.type === 1 ||
-        performance.getEntriesByType("navigation")[0]?.type === "reload";
-      if (isRefresh) {
-        const saved = localStorage.getItem("admin-tab") as Tab | null;
-        if (saved && ["appointments", "barbers", "services", "settings"].includes(saved)) {
-          return saved;
-        }
-      }
-    }
-    return "appointments";
-  });
+  const [tab, setTab] = useState<Tab>("appointments");
 
   useEffect(() => {
     localStorage.setItem("admin-tab", tab);
@@ -1797,12 +1785,14 @@ function AdminsSection() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="E-mail do novo admin"
           type="email"
+          autoComplete="off"
         />
         <Input
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Senha"
           type="password"
+          autoComplete="new-password"
         />
         <Button onClick={create} disabled={busy || !email.trim() || password.length < 1}>
           Adicionar

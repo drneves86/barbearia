@@ -102,7 +102,7 @@ export default async function Home() {
 
       <footer className="pb-6 text-center text-xs text-muted/60">
         <div className="space-y-1">
-          <p>Segunda a sexta, 08h às 18h</p>
+          <p>Segunda a sexta, {settings.working_hours_start?.replace(":", "h") || "08h"} às {settings.working_hours_end?.replace(":", "h") || "18h"}</p>
           <Link href="/admin" className="underline hover:text-gold">
             Acesso administrativo
           </Link>
