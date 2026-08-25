@@ -24,9 +24,13 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("admin-tab") as Tab | null;
-      if (saved && ["appointments", "barbers", "services", "settings"].includes(saved)) {
-        return saved;
+      const isRefresh = performance.navigation.type === 1 ||
+        performance.getEntriesByType("navigation")[0]?.type === "reload";
+      if (isRefresh) {
+        const saved = localStorage.getItem("admin-tab") as Tab | null;
+        if (saved && ["appointments", "barbers", "services", "settings"].includes(saved)) {
+          return saved;
+        }
       }
     }
     return "appointments";
