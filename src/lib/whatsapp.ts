@@ -8,7 +8,7 @@ export function phoneDigits(phone: string): string {
 }
 
 export function buildWaLink(phone: string, message: string): string {
-  return `https://wa.me/55${phoneDigits(phone)}?text=${encodeURIComponent(message)}`;
+  return `whatsapp://send?phone=55${phoneDigits(phone)}&text=${encodeURIComponent(message)}`;
 }
 
 export function confirmationMessage(opts: {

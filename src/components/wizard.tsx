@@ -151,7 +151,7 @@ export function Wizard() {
       }
       sessionStorage.removeItem(USER_KEY);
       if (data.waLink) {
-        window.open(data.waLink, "_blank", "noopener,noreferrer");
+        window.location.href = data.waLink;
       }
       setResult({
         date: data.appointment.date,
