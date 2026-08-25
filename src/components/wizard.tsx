@@ -139,6 +139,9 @@ export function Wizard() {
       );
       const data = await res.json();
       setSlots(data.slots ?? []);
+      if ((data.slots ?? []).length === 0) {
+        setError("Este dia está totalmente bloqueado para este barbeiro. Escolha outro dia.");
+      }
     } catch {
       setSlots([]);
     } finally {
@@ -149,7 +152,8 @@ export function Wizard() {
   const selectedService = services.find((s) => s.id === serviceId) ?? null;
   const selectedBarber = barbers.find((b) => b.id === barberId) ?? null;
 
-  function goToTime(day: string) {
+  async function goToTime(day: string) {
+    if (barberId) await fetchBlockedDates(barberId);
     setDate(day);
     setTime(null);
     if (barberId) loadSlots(barberId, day);
@@ -407,7 +411,7 @@ export function Wizard() {
               </button>
 
               <div className="flex gap-2">
-                <Button variant="secondary" onClick={() => setStep(2)} className="flex-1">
+                <Button variant="secondary" onClick={() => { if (barberId) fetchBlockedDates(barberId); setStep(2); }} className="flex-1">
                   ← Data
                 </Button>
                 <Button
