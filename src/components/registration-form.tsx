@@ -64,6 +64,7 @@ export function RegistrationForm({ barbershopName = "Minha Barbearia" }: { barbe
             onChange={(e) => set("name", e.target.value)}
             placeholder="João"
             autoComplete="given-name"
+            autoFocus
           />
         </Field>
         <Field label="Sobrenome (opcional)" error={errors.lastName}>

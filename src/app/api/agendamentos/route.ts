@@ -76,8 +76,12 @@ export async function POST(request: Request) {
         time: appointment.time,
         service: service?.name ?? "",
         barber: barber?.name ?? "",
+        serviceImageUrl: service?.imageUrl ?? "",
+        barberPhotoUrl: barber?.photoUrl ?? "",
         cancelToken: appointment.cancelToken,
       },
+      clientName,
+      clientLastName: data.lastName || "",
       waLink,
       cancelUrl,
     });

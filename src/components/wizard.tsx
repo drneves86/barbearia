@@ -32,9 +32,12 @@ type Result = {
   time: string;
   service: string;
   barber: string;
+  serviceImageUrl: string;
+  barberPhotoUrl: string;
   cancelUrl: string;
   waLink: string;
   clientName: string;
+  clientLastName: string;
   clientPhone: string;
 };
 
@@ -156,9 +159,12 @@ export function Wizard() {
         time: data.appointment.time,
         service: data.appointment.service,
         barber: data.appointment.barber,
+        serviceImageUrl: data.appointment.serviceImageUrl,
+        barberPhotoUrl: data.appointment.barberPhotoUrl,
         cancelUrl: data.cancelUrl,
         waLink: data.waLink,
-        clientName: user.name,
+        clientName: data.clientName || user.name,
+        clientLastName: data.clientLastName || user.lastName || "",
         clientPhone: user.phone,
       });
     } catch {
@@ -492,6 +498,7 @@ export function Wizard() {
 }
 
 function SuccessScreen({ result }: { result: Result }) {
+  const fullName = [result.clientName, result.clientLastName].filter(Boolean).join(" ");
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-10 text-center">
       <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gold/15 text-5xl">
@@ -504,13 +511,31 @@ function SuccessScreen({ result }: { result: Result }) {
 
       <div className="mt-6 rounded-2xl border border-gold/30 bg-panel p-4 text-left">
         <ul className="divide-y divide-line text-sm">
-          <li className="flex justify-between py-2">
+          <li className="flex items-center justify-between py-2">
             <span className="text-muted">Serviço</span>
-            <span className="font-semibold text-cream">{result.service}</span>
+            <span className="flex items-center gap-2 font-semibold text-cream">
+              {result.serviceImageUrl ? (
+                <img
+                  src={result.serviceImageUrl}
+                  alt={result.service}
+                  className="h-8 w-8 rounded-lg object-cover"
+                />
+              ) : null}
+              {result.service}
+            </span>
           </li>
-          <li className="flex justify-between py-2">
+          <li className="flex items-center justify-between py-2">
             <span className="text-muted">Barbeiro</span>
-            <span className="font-semibold text-cream">{result.barber}</span>
+            <span className="flex items-center gap-2 font-semibold text-cream">
+              {result.barberPhotoUrl ? (
+                <img
+                  src={result.barberPhotoUrl}
+                  alt={result.barber}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : null}
+              {result.barber}
+            </span>
           </li>
           <li className="flex justify-between py-2">
             <span className="text-muted">Data</span>
@@ -522,7 +547,7 @@ function SuccessScreen({ result }: { result: Result }) {
           </li>
           <li className="flex justify-between py-2">
             <span className="text-muted">Cliente</span>
-            <span className="font-semibold text-cream">{result.clientName}</span>
+            <span className="font-semibold text-cream">{fullName}</span>
           </li>
           <li className="flex justify-between py-2">
             <span className="text-muted">Telefone</span>
