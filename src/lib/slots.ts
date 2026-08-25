@@ -9,7 +9,7 @@ import {
   WORKING_DAYS,
 } from "./config";
 import { addDaysToDate, nowTimeInTZ, todayInTZ } from "./date";
-import type { Slot } from "./types";
+import type { BarberSchedule, Slot } from "./types";
 
 function generateSlotsInRange(start: string, end: string): string[] {
   const slots: string[] = [];
@@ -53,10 +53,21 @@ export function isDateSelectable(date: string): boolean {
 export function availableSlotsFor(
   date: string,
   booked: string[],
+  schedule?: BarberSchedule | null,
   defaultOpen?: string,
   defaultClose?: string
 ): Slot[] {
-  const slots = generateAllSlots(defaultOpen, defaultClose);
+  let slots: string[];
+
+  if (schedule && !schedule.available && !schedule.startTime && (!schedule.blockedSlots || schedule.blockedSlots.length === 0)) {
+    return [];
+  } else if (schedule && !schedule.available && schedule.blockedSlots?.length) {
+    const allSlots = generateAllSlots(defaultOpen, defaultClose);
+    const blockedSet = new Set(schedule.blockedSlots);
+    slots = allSlots.filter((s) => !blockedSet.has(s));
+  } else {
+    slots = generateAllSlots(defaultOpen, defaultClose);
+  }
 
   const bookedSet = new Set(booked);
   const today = todayInTZ();

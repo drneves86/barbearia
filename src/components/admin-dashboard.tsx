@@ -7,7 +7,8 @@ import { Button, ErrorBox, Input, Spinner } from "@/components/ui";
 import { buildWaLink, formatDateBR } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/config";
 import { todayInTZ } from "@/lib/date";
-import type { AppointmentWithDetails, Barber, Service } from "@/lib/types";
+import { generateAllSlots } from "@/lib/slots";
+import type { AppointmentWithDetails, Barber, BarberSchedule, Service } from "@/lib/types";
 
 type Tab = "appointments" | "barbers" | "services" | "settings";
 
@@ -554,6 +555,7 @@ function BarbersTab() {
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [schedulingBarber, setSchedulingBarber] = useState<Barber | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -718,6 +720,13 @@ function BarbersTab() {
                 ) : null}
                 <button
                   type="button"
+                  onClick={() => setSchedulingBarber(b)}
+                  className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted transition hover:border-gold/50 hover:text-gold"
+                >
+                  Agenda
+                </button>
+                <button
+                  type="button"
                   onClick={() => { setEditingBarber(b); setEditName(b.name); setEditPhone(b.phone); }}
                   className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted transition hover:border-gold/50 hover:text-gold"
                 >
@@ -781,6 +790,342 @@ function BarbersTab() {
           </div>
         </div>
       )}
+
+      {schedulingBarber && (
+        <BarberScheduleModal
+          barber={schedulingBarber}
+          onClose={() => setSchedulingBarber(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+function BarberScheduleModal({
+  barber,
+  onClose,
+}: {
+  barber: Barber;
+  onClose: () => void;
+}) {
+  const today = todayInTZ();
+  const [year, setYear] = useState(() => Number(today.slice(0, 4)));
+  const [month, setMonth] = useState(() => Number(today.slice(5, 7)) - 1);
+  const [schedule, setSchedule] = useState<Record<string, BarberSchedule>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [blockMode, setBlockMode] = useState<"total" | "partial">("total");
+  const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
+
+  const monthStr = String(month + 1).padStart(2, "0");
+  const from = `${year}-${monthStr}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const to = `${year}-${monthStr}-${String(lastDay).padStart(2, "0")}`;
+
+  const loadSchedule = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/admin/barbers/${barber.id}/schedule?from=${from}&to=${to}`
+      );
+      const data = await res.json();
+      const map: Record<string, BarberSchedule> = {};
+      for (const entry of data.schedule ?? []) {
+        map[entry.date] = entry;
+      }
+      setSchedule(map);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }, [barber.id, from, to]);
+
+  useEffect(() => {
+    loadSchedule();
+  }, [loadSchedule]);
+
+  async function saveSchedule(
+    date: string,
+    available: boolean,
+    blocked: string[] = []
+  ) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/barbers/${barber.id}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, available, blockedSlots: blocked }),
+      });
+      const data = await res.json();
+      if (data.schedule) {
+        setSchedule((prev) => ({ ...prev, [date]: data.schedule }));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleDateClick(date: string) {
+    if (date < today) return;
+    if (selectedDate === date) {
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(date);
+      const existing = schedule[date];
+      if (existing) {
+        if (!existing.available && existing.blockedSlots?.length) {
+          setBlockMode("partial");
+          setBlockedSlots(new Set(existing.blockedSlots));
+        } else {
+          setBlockMode("total");
+          setBlockedSlots(new Set());
+        }
+      } else {
+        setBlockMode("total");
+        setBlockedSlots(new Set());
+      }
+    }
+  }
+
+  async function applyBlock() {
+    if (!selectedDate) return;
+    if (blockMode === "total") {
+      await saveSchedule(selectedDate, false, []);
+    } else {
+      const slots = Array.from(blockedSlots).sort();
+      await saveSchedule(selectedDate, false, slots);
+    }
+    setSelectedDate(null);
+  }
+
+  async function clearDay() {
+    if (!selectedDate) return;
+    await saveSchedule(selectedDate, true, []);
+    setSelectedDate(null);
+  }
+
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+  const cells: (string | null)[] = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= lastDay; d++) {
+    cells.push(
+      `${year}-${monthStr}-${String(d).padStart(2, "0")}`
+    );
+  }
+
+  function prevMonth() {
+    if (month === 0) {
+      setMonth(11);
+      setYear((y) => y - 1);
+    } else {
+      setMonth((m) => m - 1);
+    }
+  }
+
+  function nextMonth() {
+    if (month === 11) {
+      setMonth(0);
+      setYear((y) => y + 1);
+    } else {
+      setMonth((m) => m + 1);
+    }
+  }
+
+  const selected = selectedDate ? schedule[selectedDate] : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-line bg-panel p-5 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-cream">
+            Agenda — {barber.name}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted hover:text-cream"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="rounded-lg px-2 py-1 text-sm text-muted hover:text-cream"
+          >
+            ←
+          </button>
+          <span className="font-semibold text-cream">
+            {MONTH_NAMES[month]} {year}
+          </span>
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="rounded-lg px-2 py-1 text-sm text-muted hover:text-cream"
+          >
+            →
+          </button>
+        </div>
+
+        <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted">
+          {WEEKDAYS.map((d) => (
+            <div key={d} className="py-1">
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Spinner className="h-6 w-6 text-gold" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-7 gap-1">
+            {cells.map((date, i) => {
+              if (!date) return <div key={`empty-${i}`} />;
+              const entry = schedule[date];
+              const isPast = date < today;
+              const isTotalOff = entry && !entry.available && (!entry.blockedSlots || entry.blockedSlots.length === 0);
+              const isPartialOff = entry && !entry.available && entry.blockedSlots?.length;
+
+              return (
+                <button
+                  key={date}
+                  type="button"
+                  disabled={isPast || saving}
+                  onClick={() => handleDateClick(date)}
+                  className={`relative flex h-9 items-center justify-center rounded-lg text-xs font-medium transition ${
+                    isPast
+                      ? "cursor-not-allowed text-muted/30"
+                      : isTotalOff
+                        ? "bg-crimson/30 text-red-200 hover:bg-crimson/40"
+                        : isPartialOff
+                          ? "bg-crimson/15 text-red-300 hover:bg-crimson/25"
+                          : "text-cream hover:bg-panel-2"
+                  } ${selectedDate === date ? "ring-2 ring-gold" : ""}`}
+                >
+                  {Number(date.slice(8))}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted">
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded bg-crimson/30" /> Indisponível total
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded bg-crimson/15" /> Indisponível parcial
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block h-3 w-3 rounded bg-panel-2" /> Disponível
+          </span>
+        </div>
+
+        {selectedDate && (
+          <div className="mt-4 rounded-xl border border-line bg-panel-2 p-3 space-y-3">
+            <p className="text-sm font-semibold text-cream">
+              {formatDateBR(selectedDate)}
+            </p>
+
+            {selected && !selected.available && (
+              <p className="text-xs text-muted">
+                {selected.blockedSlots?.length
+                  ? `${selected.blockedSlots.length} horário(s) bloqueado(s)`
+                  : "Bloqueado o dia todo"}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setBlockMode("total")}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  blockMode === "total"
+                    ? "bg-crimson/30 text-red-200"
+                    : "bg-panel text-muted hover:text-cream"
+                }`}
+              >
+                Indisponível total
+              </button>
+              <button
+                type="button"
+                onClick={() => setBlockMode("partial")}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  blockMode === "partial"
+                    ? "bg-crimson/30 text-red-200"
+                    : "bg-panel text-muted hover:text-cream"
+                }`}
+              >
+                Indisponível parcial
+              </button>
+            </div>
+
+            {blockMode === "partial" && (
+              <div>
+                <p className="mb-2 text-xs text-muted">Clique nos horários para bloquear/liberar:</p>
+                <div className="grid grid-cols-4 gap-1">
+                  {generateAllSlots().map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => {
+                        setBlockedSlots((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(slot)) {
+                            next.delete(slot);
+                          } else {
+                            next.add(slot);
+                          }
+                          return next;
+                        });
+                      }}
+                      className={`rounded-lg px-2 py-1.5 text-xs font-medium transition ${
+                        blockedSlots.has(slot)
+                          ? "bg-crimson/30 text-red-300"
+                          : "bg-panel text-cream hover:bg-panel-2"
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button onClick={applyBlock} disabled={saving}>
+                Aplicar
+              </Button>
+              {selected && (
+                <Button variant="secondary" onClick={clearDay} disabled={saving}>
+                  Limpar dia
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 flex justify-end">
+          <Button variant="secondary" onClick={onClose}>
+            Fechar
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

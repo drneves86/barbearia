@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getBookedTimes, getSettings } from "@/lib/db";
+import { getBarberDaySchedule, getBookedTimes, getSettings } from "@/lib/db";
 import { availableSlotsFor, isDateSelectable } from "@/lib/slots";
 
 export const dynamic = "force-dynamic";
@@ -18,14 +18,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [booked, settings] = await Promise.all([
+    const [booked, schedule, settings] = await Promise.all([
       getBookedTimes(date, barberId),
+      getBarberDaySchedule(barberId, date),
       getSettings().catch(() => ({} as Record<string, string>)),
     ]);
 
+    if (schedule && !schedule.available && !schedule.startTime && (!schedule.blockedSlots || schedule.blockedSlots.length === 0)) {
+      return Response.json({ slots: [] });
+    }
+
     const defaultOpen = settings.working_hours_start || "08:00";
     const defaultClose = settings.working_hours_end || "18:00";
-    return Response.json({ slots: availableSlotsFor(date, booked, defaultOpen, defaultClose) });
+    return Response.json({ slots: availableSlotsFor(date, booked, schedule, defaultOpen, defaultClose) });
   } catch {
     return Response.json({ error: "Erro ao consultar disponibilidade" }, { status: 500 });
   }

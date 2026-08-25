@@ -5,6 +5,7 @@ import type {
   AppointmentRecord,
   AppointmentWithDetails,
   Barber,
+  BarberSchedule,
   Service,
   UserRecord,
 } from "./types";
@@ -461,6 +462,135 @@ export async function deleteBarber(id: string): Promise<boolean> {
 // ------------------------------------------------------------
 // Agenda do barbeiro
 // ------------------------------------------------------------
+export async function getBarberSchedule(
+  barberId: string,
+  startDate: string,
+  endDate: string
+): Promise<BarberSchedule[]> {
+  const selectCols = "id, barber_id, date, available, start_time, end_time, blocked_slots";
+  const fallbackCols = "id, barber_id, date, available, start_time, end_time";
+
+  let rows: Record<string, unknown>[] = [];
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select(selectCols)
+      .eq("barber_id", barberId)
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: true });
+    if (error) throw error;
+    rows = (data ?? []) as Record<string, unknown>[];
+  } catch {
+    const { data } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select(fallbackCols)
+      .eq("barber_id", barberId)
+      .gte("date", startDate)
+      .lte("date", endDate)
+      .order("date", { ascending: true });
+    rows = (data ?? []) as Record<string, unknown>[];
+  }
+
+  return rows.map((r) => ({
+    id: r.id as string,
+    barberId: r.barber_id as string,
+    date: r.date as string,
+    available: r.available as boolean,
+    startTime: r.start_time ? (r.start_time as string).slice(0, 5) : null,
+    endTime: r.end_time ? (r.end_time as string).slice(0, 5) : null,
+    blockedSlots: r.blocked_slots ? (r.blocked_slots as string).split(",").filter(Boolean) : [],
+  }));
+}
+
+export async function setBarberSchedule(input: {
+  barberId: string;
+  date: string;
+  available: boolean;
+  startTime?: string | null;
+  endTime?: string | null;
+  blockedSlots?: string[];
+}): Promise<BarberSchedule> {
+  const blockedStr = input.blockedSlots?.length ? input.blockedSlots.join(",") : null;
+  const baseRow = {
+    barber_id: input.barberId,
+    date: input.date,
+    available: input.available,
+    start_time: input.startTime ?? null,
+    end_time: input.endTime ?? null,
+  };
+
+  let row: Record<string, unknown> | null = null;
+
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("barber_schedules")
+      .upsert({ ...baseRow, blocked_slots: blockedStr }, { onConflict: "barber_id,date" })
+      .select("id, barber_id, date, available, start_time, end_time, blocked_slots")
+      .single();
+    if (error) throw error;
+    row = data;
+  } catch {
+    const { data, error } = await supabaseAdmin()
+      .from("barber_schedules")
+      .upsert(baseRow, { onConflict: "barber_id,date" })
+      .select("id, barber_id, date, available, start_time, end_time")
+      .single();
+    if (error) throw new Error("Não foi possível salvar a agenda.");
+    row = data;
+  }
+
+  if (!row) throw new Error("Não foi possível salvar a agenda.");
+  return {
+    id: row.id as string,
+    barberId: row.barber_id as string,
+    date: row.date as string,
+    available: row.available as boolean,
+    startTime: row.start_time ? (row.start_time as string).slice(0, 5) : null,
+    endTime: row.end_time ? (row.end_time as string).slice(0, 5) : null,
+    blockedSlots: row.blocked_slots ? (row.blocked_slots as string).split(",").filter(Boolean) : [],
+  };
+}
+
+export async function getBarberDaySchedule(
+  barberId: string,
+  date: string
+): Promise<BarberSchedule | null> {
+  const selectCols = "id, barber_id, date, available, start_time, end_time, blocked_slots";
+  const fallbackCols = "id, barber_id, date, available, start_time, end_time";
+
+  let row: Record<string, unknown> | null = null;
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select(selectCols)
+      .eq("barber_id", barberId)
+      .eq("date", date)
+      .maybeSingle();
+    if (error) throw error;
+    row = data;
+  } catch {
+    const { data } = await supabaseAdmin()
+      .from("barber_schedules")
+      .select(fallbackCols)
+      .eq("barber_id", barberId)
+      .eq("date", date)
+      .maybeSingle();
+    row = data;
+  }
+
+  if (!row) return null;
+  return {
+    id: row.id as string,
+    barberId: row.barber_id as string,
+    date: row.date as string,
+    available: row.available as boolean,
+    startTime: row.start_time ? (row.start_time as string).slice(0, 5) : null,
+    endTime: row.end_time ? (row.end_time as string).slice(0, 5) : null,
+    blockedSlots: row.blocked_slots ? (row.blocked_slots as string).split(",").filter(Boolean) : [],
+  };
+}
+
 // Serviços (CRUD admin)
 export async function createService(input: {
   name: string;

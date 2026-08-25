@@ -66,6 +66,7 @@ export function Wizard() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [blockedDates, setBlockedDates] = useState<Set<string>>(new Set());
 
   const [user, setUser] = useState<UserForm>({ name: "", lastName: "", phone: "" });
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +98,38 @@ export function Wizard() {
       .finally(() => setLoadingCatalog(false));
   }, []);
 
+  const fetchBlockedDates = useCallback(async (bid: string) => {
+    if (!bid) {
+      setBlockedDates(new Set());
+      return;
+    }
+    try {
+      const now = new Date();
+      const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      const horizon = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+      const to = `${horizon.getFullYear()}-${String(horizon.getMonth() + 1).padStart(2, "0")}-${String(horizon.getDate()).padStart(2, "0")}`;
+      const res = await fetch(`/api/schedule?barberId=${encodeURIComponent(bid)}&from=${from}&to=${to}`);
+      const data = await res.json();
+      const blocked = new Set<string>();
+      for (const entry of data.schedule ?? []) {
+        if (!entry.available) {
+          blocked.add(entry.date);
+        }
+      }
+      setBlockedDates(blocked);
+    } catch {
+      setBlockedDates(new Set());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!barberId) {
+      setBlockedDates(new Set());
+      return;
+    }
+    fetchBlockedDates(barberId);
+  }, [barberId, fetchBlockedDates]);
+
   const loadSlots = useCallback(async (barber: string, day: string) => {
     setLoadingSlots(true);
     setSlots([]);
@@ -120,6 +153,7 @@ export function Wizard() {
   const selectedBarber = barbers.find((b) => b.id === barberId) ?? null;
 
   async function goToTime(day: string) {
+    if (barberId) await fetchBlockedDates(barberId);
     setDate(day);
     setTime(null);
     if (barberId) loadSlots(barberId, day);
@@ -303,6 +337,10 @@ export function Wizard() {
                 selected={date}
                 isSelectable={isDateSelectable}
                 onSelect={(d) => goToTime(d)}
+                blockedDates={blockedDates}
+                onMonthChange={() => {
+                  if (barberId) fetchBlockedDates(barberId);
+                }}
               />
               <Button variant="ghost" onClick={() => setStep(1)}>
                 ← Voltar
@@ -373,7 +411,7 @@ export function Wizard() {
               </button>
 
               <div className="flex gap-2">
-                <Button variant="secondary" onClick={() => setStep(2)} className="flex-1">
+                <Button variant="secondary" onClick={() => { if (barberId) fetchBlockedDates(barberId); setStep(2); }} className="flex-1">
                   ← Data
                 </Button>
                 <Button
