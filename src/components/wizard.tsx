@@ -343,9 +343,6 @@ export function Wizard() {
                   if (barberId) fetchBlockedDates(barberId);
                 }}
               />
-              <Button variant="outline" onClick={() => fetchBlockedDates(barberId)} className="mt-2">
-                Atualizar agenda
-              </Button>
               <Button variant="ghost" onClick={() => setStep(1)}>
                 ← Voltar
               </Button>
